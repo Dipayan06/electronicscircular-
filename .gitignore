@@ -1,0 +1,29 @@
+# Root ignore — see frontend/.gitignore and backend/.gitignore for specifics.
+
+# secrets & env
+.env
+*.env
+!*.env.example
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# node
+node_modules/
+dist/
+
+# databases & uploads
+*.db
+*.sqlite3
+uploads/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# MS Office lock/temp files
+~$*

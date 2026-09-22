@@ -1,0 +1,14 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# local env & secrets
+.env
+
+# local database + uploads
+*.db
+*.sqlite3
+uploads/
