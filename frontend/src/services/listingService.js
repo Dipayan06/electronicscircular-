@@ -1,8 +1,9 @@
-// Resale listing service (FR-H) — PHASE 14: real backend.
+// Marketplace listing service (FR-H) — devices, components and materials.
 import apiClient from './apiClient';
 
-export async function getListings(filterType = 'all') {
-  const res = await apiClient.get('/listings', { params: { type: filterType } });
+// filterKind: 'all' | 'device' | 'component' | 'material'
+export async function getListings(filterKind = 'all') {
+  const res = await apiClient.get('/listings', { params: { kind: filterKind } });
   return res.data.data;
 }
 
@@ -11,15 +12,13 @@ export async function getListing(id) {
   return res.data.data;
 }
 
-export async function createListing({ device_id, title, type, price, condition, description }) {
-  const res = await apiClient.post('/listings', {
-    device_id: device_id || null, title, type, price: Number(price), condition, description,
-  });
+export async function createListing(payload) {
+  const res = await apiClient.post('/listings', payload);
   return res.data.data;
 }
 
-// Simulated reservation/purchase (no real payment — FR-H4).
-export async function reserveListing(id) {
-  const res = await apiClient.put(`/listings/${id}/reserve`);
+// Buy/reserve. Materials pass a quantity (buy in appropriate amounts or bulk).
+export async function reserveListing(id, quantity) {
+  const res = await apiClient.put(`/listings/${id}/reserve`, quantity != null ? { quantity } : {});
   return res.data.data;
 }

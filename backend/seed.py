@@ -104,14 +104,42 @@ def seed():
                          problem="Keyboard + weak battery", cost=3200, days=3,
                          description="Replace keyboard and battery", status="SENT"))
 
-        # --- Resale listings (FR-H) ---
+        # --- Marketplace listings (FR-H): devices, components and materials ---
         db.add_all([
-            ResaleListing(device_id=d_ip12.id, seller_id=consumer.id, title="Apple iPhone 12",
-                          type="smartphone", price=22000, condition="Good",
+            # Whole devices
+            ResaleListing(device_id=d_ip12.id, seller_id=consumer.id, kind="device", type="smartphone",
+                          title="Apple iPhone 12", price=22000, quantity=1, condition="Good",
                           description="Fully functional, minor wear.", status="ACTIVE"),
-            ResaleListing(seller_id=consumer.id, title="Lenovo ThinkPad T480", type="laptop",
-                          price=18500, condition="Refurbished",
+            ResaleListing(seller_id=consumer.id, kind="device", type="laptop",
+                          title="Lenovo ThinkPad T480", price=18500, quantity=1, condition="Refurbished",
                           description="Professionally refurbished, 6-month warranty.", status="ACTIVE"),
+            # Components
+            ResaleListing(seller_id=consumer.id, kind="component", type="gpu",
+                          title="NVIDIA RTX 3060 Graphics Card", price=18000, quantity=1, condition="Good",
+                          description="Pulled from a working PC, no artifacts.", status="ACTIVE"),
+            ResaleListing(seller_id=consumer.id, kind="component", type="ram",
+                          title="Corsair 16GB DDR4 RAM", price=2800, quantity=4, condition="Good",
+                          description="Tested modules, 3200MHz.", status="ACTIVE"),
+            ResaleListing(seller_id=consumer.id, kind="component", type="storage",
+                          title="Samsung 1TB SSD (secondary storage)", price=4500, quantity=2, condition="Good",
+                          description="Healthy SSDs, 95%+ life remaining.", status="ACTIVE"),
+            # Recovered materials — sold by quantity / in bulk
+            ResaleListing(seller_id=consumer.id, kind="material", type="copper",
+                          title="Recovered copper (from cables)", price=650, unit="kg",
+                          quantity=120, min_order=5, condition="Recovered",
+                          description="99% pure copper recovered from e-waste wiring.", status="ACTIVE"),
+            ResaleListing(seller_id=consumer.id, kind="material", type="aluminium",
+                          title="Aluminium scrap (chassis)", price=180, unit="kg",
+                          quantity=300, min_order=10, condition="Recovered",
+                          description="Clean aluminium from laptop/desktop chassis.", status="ACTIVE"),
+            ResaleListing(seller_id=consumer.id, kind="material", type="rare_earth",
+                          title="Rare-earth magnet material (neodymium)", price=45, unit="g",
+                          quantity=2000, min_order=50, condition="Recovered",
+                          description="Neodymium recovered from hard-drive magnets.", status="ACTIVE"),
+            ResaleListing(seller_id=consumer.id, kind="material", type="gold",
+                          title="Gold recovered from connectors", price=6200, unit="g",
+                          quantity=40, min_order=1, condition="Recovered",
+                          description="Fine gold recovered from board connectors and pins.", status="ACTIVE"),
         ])
 
         # --- Lifecycle events (FR-J) ---

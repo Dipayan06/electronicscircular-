@@ -1,31 +1,55 @@
-"""Pydantic schemas for resale listings."""
+"""Pydantic schemas for marketplace listings (devices, components, materials)."""
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
-from ..models.enums import DEVICE_TYPES
+from ..models.enums import LISTING_KINDS, MATERIAL_UNITS, categories_for_kind
 
 
 class ListingCreate(BaseModel):
-    device_id: int | None = None
+    kind: str = "device"                 # device | component | material
+    type: str                            # category within the kind
     title: str = Field(min_length=2, max_length=160)
-    type: str
-    price: float = Field(gt=0)
+    price: float = Field(gt=0)           # total price, or price-per-unit for materials
     condition: str | None = None
     description: str | None = None
+    device_id: int | None = None         # only for whole-device listings
 
-    @field_validator("type")
-    @classmethod
-    def valid_type(cls, v):
-        if v not in DEVICE_TYPES:
-            raise ValueError(f"must be one of {', '.join(DEVICE_TYPES)}")
-        return v
+    # Quantity-based fields (required for materials).
+    unit: str | None = None
+    quantity: float | None = None
+    min_order: float | None = None
+
+    @model_validator(mode="after")
+    def _validate(self):
+        if self.kind not in LISTING_KINDS:
+            raise ValueError(f"kind must be one of {', '.join(LISTING_KINDS)}")
+        allowed = categories_for_kind(self.kind)
+        if self.type not in allowed:
+            raise ValueError(f"type must be one of {', '.join(allowed)} for a {self.kind}")
+        if self.kind == "material":
+            if not self.unit or self.unit not in MATERIAL_UNITS:
+                raise ValueError(f"materials need a unit ({', '.join(MATERIAL_UNITS)})")
+            if not self.quantity or self.quantity <= 0:
+                raise ValueError("materials need a positive available quantity")
+            if self.min_order is not None and self.min_order <= 0:
+                raise ValueError("min_order must be positive")
+        return self
+
+
+class ReserveIn(BaseModel):
+    """Purchase/reserve request. Materials specify how much to buy."""
+    quantity: float | None = None
 
 
 class ListingOut(BaseModel):
     id: int
-    title: str
+    kind: str
     type: str
+    title: str
     price: float
+    unit: str | None = None
+    quantity: float | None = None
+    min_order: float | None = None
     condition: str | None = None
     description: str | None = None
     status: str
@@ -37,10 +61,11 @@ class ListingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
-    def from_orm_listing(cls, listing) -> "ListingOut":
+    def from_orm_listing(cls, l) -> "ListingOut":
         return cls(
-            id=listing.id, title=listing.title, type=listing.type, price=listing.price,
-            condition=listing.condition, description=listing.description, status=listing.status,
-            seller_id=listing.seller_id, seller=listing.seller.name if listing.seller else None,
-            device_id=listing.device_id, created_at=listing.created_at,
+            id=l.id, kind=l.kind, type=l.type, title=l.title, price=l.price,
+            unit=l.unit, quantity=l.quantity, min_order=l.min_order,
+            condition=l.condition, description=l.description, status=l.status,
+            seller_id=l.seller_id, seller=l.seller.name if l.seller else None,
+            device_id=l.device_id, created_at=l.created_at,
         )
