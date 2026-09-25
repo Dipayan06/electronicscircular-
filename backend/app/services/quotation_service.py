@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from ..models import Quotation, Device, Provider, User
 from ..schemas.quotation import QuotationCreate, QuoteSubmit, QuotationOut
 from ..utils.responses import APIError
-from . import lifecycle_service
+from . import lifecycle_service, notification_service
 
 PROVIDER_ROLES = ("provider", "refurbisher", "recycler", "supplier")
 
@@ -47,6 +47,9 @@ def request_quotation(db: Session, user: User, data: QuotationCreate) -> Quotati
     db.flush()
     lifecycle_service.log_event(db, device.id, "QUOTE_REQUESTED",
                                 f"Quotation requested from {provider.name}", user.name)
+    if provider.user_id:  # notify the provider's account, if it has one
+        notification_service.notify(db, provider.user_id, "quote", "New quote request",
+                                    f"{user.name} requested a quote for {device.brand} {device.model}.", commit=False)
     db.commit()
     db.refresh(quote)
     return QuotationOut.model_validate(quote)
@@ -67,6 +70,11 @@ def submit_quote(db: Session, user: User, quote_id: int, data: QuoteSubmit) -> Q
     quote.days = data.days
     quote.description = data.description
     quote.status = "SENT"
+    # Notify the device owner that a quote arrived.
+    device = db.query(Device).filter(Device.id == quote.device_id).first()
+    if device:
+        notification_service.notify(db, device.owner_id, "quote", "Quote received",
+                                    f"{provider.name} sent a quote of ₹{int(data.cost):,}.", commit=False)
     db.commit()
     db.refresh(quote)
     return QuotationOut.model_validate(quote)
@@ -89,6 +97,11 @@ def respond_to_quote(db: Session, user: User, quote_id: int, accept: bool) -> Qu
     if accept:
         lifecycle_service.log_event(db, device.id, "QUOTE_ACCEPTED",
                                     f"Quotation accepted (₹{int(quote.cost or 0):,})", user.name)
+    provider = db.query(Provider).filter(Provider.id == quote.provider_id).first()
+    if provider and provider.user_id:
+        verb = "accepted" if accept else "rejected"
+        notification_service.notify(db, provider.user_id, "quote", f"Quote {verb}",
+                                    f"{user.name} {verb} your quote for {device.brand} {device.model}.", commit=False)
     db.commit()
     db.refresh(quote)
     return QuotationOut.model_validate(quote)

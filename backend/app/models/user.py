@@ -1,7 +1,7 @@
 """User & Role models (FR-A). A user has exactly one role (Phase 0 assumption A1)."""
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -25,6 +25,9 @@ class User(Base):
     email = Column(String(180), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
+    # Email verification state (Feature 1). Server-authoritative — the frontend
+    # cannot flip this; only a valid OTP verification sets it True.
+    is_verified = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     role = relationship("Role", back_populates="users")

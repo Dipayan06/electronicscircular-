@@ -6,7 +6,18 @@ import { ChevronLeft } from 'lucide-react';
 import useAsync from '../hooks/useAsync';
 import { useToast } from '../context/ToastContext';
 import { getListing, reserveListing } from '../services/listingService';
+import { getPrices } from '../services/pricingService';
+import { getMyReviews } from '../services/priceReviewService';
+import { useAuth } from '../context/AuthContext';
 import { categoryLabel, kindLabel } from '../config/listings.config';
+import PriceReferenceTag from '../components/pricing/PriceReferenceTag';
+
+// Feature 4: what buyers/sellers see for listings held by price regulation.
+const REVIEW_NOTE = {
+  PRICE_REVIEW_REQUIRED: 'The price of this item is being reviewed by an admin. It can be bought once approved.',
+  SUSPENDED_PENDING_REVIEW: 'This listing is held for price review and is not visible to buyers yet.',
+  REJECTED: 'An admin rejected the price of this listing.',
+};
 import StatusBadge from '../components/ui/StatusBadge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -21,7 +32,14 @@ export default function ListingDetailPage() {
   const [busy, setBusy] = useState(false);
   const [qty, setQty] = useState('');
 
+  const { user } = useAuth();
   const isMaterial = data?.kind === 'material';
+  const isOwner = data && user && data.seller_id === user.id;
+  const { data: prices } = useAsync(() => (isMaterial ? getPrices() : null), [isMaterial]);
+  const reference = prices?.items.find((p) => p.material === data?.type);
+  const underReview = data && REVIEW_NOTE[data.status];
+  const { data: myReviews } = useAsync(() => (isOwner && underReview ? getMyReviews() : null), [isOwner, underReview]);
+  const review = myReviews?.find((r) => r.listing_id === data?.id);
 
   function openBuy() {
     if (isMaterial) setQty(String(data.min_order || 1));
@@ -54,6 +72,21 @@ export default function ListingDetailPage() {
       <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--green-dark)', marginBottom: 12 }}>
         ₹{data.price.toLocaleString('en-IN')}{isMaterial ? <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-muted)' }}> / {data.unit}</span> : null}
       </div>
+      {reference && <div style={{ marginBottom: 14 }}><PriceReferenceTag price={reference} /></div>}
+
+      {underReview && (
+        <div className={`price-check ${data.status === 'PRICE_REVIEW_REQUIRED' ? 'REVIEW' : 'EXTREME'}`} style={{ margin: '0 0 14px' }}>
+          <strong>{data.status.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}</strong>
+          {REVIEW_NOTE[data.status]}
+          {review && (
+            <div style={{ marginTop: 6 }}>
+              Reason: {review.reason}
+              {review.justification && <><br />Your justification: {review.justification}</>}
+              {review.reviewer_note && <><br />Admin note: {review.reviewer_note}</>}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="card">
         <dl className="kv">
@@ -65,9 +98,11 @@ export default function ListingDetailPage() {
           <dt>Description</dt><dd>{data.description || '—'}</dd>
         </dl>
         <div style={{ marginTop: 18 }}>
-          {data.status === 'ACTIVE'
-            ? <Button onClick={openBuy}>{isMaterial ? 'Buy quantity' : 'Reserve this item'}</Button>
-            : <p style={{ color: 'var(--text-muted)', margin: 0 }}>This item is {data.status.toLowerCase()} and no longer available.</p>}
+          {data.status === 'ACTIVE' && <Button onClick={openBuy}>{isMaterial ? 'Buy quantity' : 'Reserve this item'}</Button>}
+          {data.status !== 'ACTIVE' && (!underReview || data.status === 'REJECTED') && (
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>This item is {data.status.toLowerCase()} and no longer available.</p>
+          )}
+          {underReview && data.status !== 'REJECTED' && <p style={{ color: 'var(--text-muted)', margin: 0 }}>Not available to buy while the price is under review.</p>}
         </div>
         <div className="placeholder-note" style={{ marginTop: 14 }}>
           Simulated purchase — payment integration is out of scope for the prototype.

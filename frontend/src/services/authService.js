@@ -18,3 +18,21 @@ export async function me() {
   const res = await apiClient.get('/auth/me');
   return res.data.data; // user
 }
+
+// ---- Feature 1: email verification ----
+export async function verifyEmail(code) {
+  const res = await apiClient.post('/auth/verify-email', { code });
+  return res.data.data; // updated user (is_verified: true)
+}
+
+export async function resendVerification() {
+  const res = await apiClient.post('/auth/resend-verification');
+  return res.data;
+}
+
+// Dev mode only (EMAIL_DEV_MODE on the server): fetch MY pending code, since no
+// real email is sent. The server returns 404 when dev mode is off.
+export async function getDevVerificationCode() {
+  const res = await apiClient.get('/auth/dev/verification-code');
+  return res.data.data.code;
+}

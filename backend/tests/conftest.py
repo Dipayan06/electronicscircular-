@@ -14,11 +14,15 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
 from app import models  # noqa: F401 — register all tables
-from app.models import Role, User, Provider
+from datetime import datetime
+from decimal import Decimal
+
+from app.models import Role, User, Provider, MaterialPrice
 from app.models.enums import ROLES
 from app.utils.security import hash_password
 
-PROVIDER_EMAIL = "fixit@test.com"
+PROVIDER_EMAIL = "fixit@gmail.com"
+ADMIN_EMAIL = "admin@gmail.com"
 TEST_PASSWORD = "testpass1"
 
 
@@ -43,6 +47,13 @@ def client():
     db.flush()
     db.add(Provider(user_id=prov_user.id, name="FixIt Labs", type="technician",
                     verified=True, rating=4.6, location="Bengaluru"))
+    db.add(User(name="Admin", email=ADMIN_EMAIL, is_verified=True,
+                password_hash=hash_password(TEST_PASSWORD), role_id=roles["admin"].id))
+    # Reference prices for pricing / regulation tests (band 0.5x-1.5x, extreme 3x).
+    for material, price, unit in (("copper", "750", "kg"), ("gold", "6500", "g")):
+        db.add(MaterialPrice(material=material, display_name=material.title(), reference_price=Decimal(price),
+                             unit=unit, source="Admin reference - test", source_type="admin",
+                             observed_at=datetime.utcnow()))
     db.commit()
     db.close()
 
@@ -73,3 +84,11 @@ def token_for(client, email, password=TEST_PASSWORD):
 
 def auth_header(token):
     return {"Authorization": f"Bearer {token}"}
+
+
+def verify(client, headers):
+    """Complete email verification via the dev-mode self-fetch endpoint."""
+    code = client.get("/api/auth/dev/verification-code", headers=headers).json()["data"]["code"]
+    r = client.post("/api/auth/verify-email", headers=headers, json={"code": code})
+    assert r.status_code == 200, r.text
+    return headers

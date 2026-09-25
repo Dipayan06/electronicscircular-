@@ -53,12 +53,20 @@ export function AuthProvider({ children }) {
     return u;
   }
 
+  // Re-read the user from the server (e.g. after email verification). The
+  // verified flag is never set client-side — only what /auth/me says counts.
+  async function refreshUser() {
+    const u = await authService.me();
+    setUser(u);
+    return u;
+  }
+
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }
 
-  const value = { user, loading, isAuthenticated: !!user, login, register, logout };
+  const value = { user, loading, isAuthenticated: !!user, login, register, logout, refreshUser };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

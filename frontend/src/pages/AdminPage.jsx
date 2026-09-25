@@ -10,12 +10,21 @@ import StatCard from '../components/ui/StatCard';
 import StatusBadge from '../components/ui/StatusBadge';
 import Button from '../components/ui/Button';
 import LoadingState from '../components/ui/LoadingState';
+import PricingAdmin from '../components/admin/PricingAdmin';
+import PriceReviewsAdmin from '../components/admin/PriceReviewsAdmin';
+import { getReviews } from '../services/priceReviewService';
+
+const TABS = [
+  ['providers', 'Providers'], ['devices', 'Devices'], ['listings', 'Listings'],
+  ['reviews', 'Price reviews'], ['pricing', 'Material pricing'],
+];
 
 export default function AdminPage() {
   const [tab, setTab] = useState('providers');
   const { data: providers, loading: lp, reload: reloadProviders } = useAsync(() => getProviders('all'));
   const { data: devices, loading: ld } = useAsync(getDevices);
-  const { data: listings } = useAsync(() => getListings('all'));
+  const { data: listings, reload: reloadListings } = useAsync(() => getListings('all'));
+  const { data: pendingReviews, reload: reloadReviews } = useAsync(() => getReviews('PENDING'));
 
   const toast = useToast();
   async function verify(id) {
@@ -30,6 +39,7 @@ export default function AdminPage() {
     { value: providers?.filter((p) => p.verified).length ?? '—', label: 'Verified', icon: 'BadgeCheck' },
     { value: pending, label: 'Pending Verif.', icon: 'Clock' },
     { value: listings?.filter((l) => l.status === 'ACTIVE').length ?? '—', label: 'Listings', icon: 'Store' },
+    { value: pendingReviews?.length ?? '—', label: 'Price Reviews', icon: 'Scale' },
   ];
 
   return (
@@ -42,8 +52,10 @@ export default function AdminPage() {
       </div>
 
       <div className="tabs">
-        {['providers', 'devices', 'listings'].map((t) => (
-          <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)} style={{ textTransform: 'capitalize' }}>{t}</button>
+        {TABS.map(([t, label]) => (
+          <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
+            {label}{t === 'reviews' && pendingReviews?.length ? ` (${pendingReviews.length})` : ''}
+          </button>
         ))}
       </div>
 
@@ -95,6 +107,9 @@ export default function AdminPage() {
             </tbody>
           </table>
         )}
+
+        {tab === 'reviews' && <PriceReviewsAdmin onChange={() => { reloadReviews(); reloadListings(); }} />}
+        {tab === 'pricing' && <PricingAdmin />}
       </div>
     </div>
   );

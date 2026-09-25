@@ -250,7 +250,8 @@ h1, h2, h3 { color: var(--text); margin: 0 0 0.4em; }
 .table tr:last-child td { border-bottom: none; }
 
 /* tabs */
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px; overflow-x: auto; }
+.tabs .tab { white-space: nowrap; }
 .tab { padding: 9px 15px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; }
 .tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
 
@@ -274,3 +275,67 @@ h1, h2, h3 { color: var(--text); margin: 0 0 0.4em; }
 .toast-success { background: var(--green); }
 .toast-info { background: var(--status-progress); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---------- 4-feature enhancement ---------- */
+
+.link-btn { background: none; border: none; padding: 0; cursor: pointer; color: var(--green); font: inherit; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.link-btn:hover { text-decoration: underline; }
+
+/* Feature 1: verify-email banner */
+.verify-banner {
+  background: var(--status-pending-bg); color: var(--status-pending); border: 1px solid currentColor;
+  border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; font-weight: 600; margin-bottom: 18px;
+}
+.verify-banner a { color: inherit; text-decoration: underline; }
+
+/* Feature 3: notification bell + panel */
+.notif { position: relative; }
+.notif-btn { position: relative; padding: 6px; }
+.notif-count {
+  position: absolute; top: 0; right: 0; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+  background: var(--status-danger); color: #fff; font-size: 10px; font-weight: 800; line-height: 17px; text-align: center;
+  transform: translate(35%, -25%);
+}
+.notif-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); width: 360px; max-width: calc(100vw - 24px);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow); z-index: 40; overflow: hidden;
+}
+.notif-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.notif-head .link-btn { font-size: 13px; }
+.notif-list { max-height: 60vh; overflow-y: auto; }
+.notif-empty { padding: 22px 14px; margin: 0; text-align: center; color: var(--text-muted); font-size: 14px; }
+.notif-item {
+  display: flex; gap: 10px; width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+  padding: 11px 14px 11px 28px; border-bottom: 1px solid var(--border); position: relative; font: inherit; color: var(--text);
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--green-soft); }
+.notif-item.unread { background: var(--status-progress-bg); }
+.notif-dot { position: absolute; left: 12px; top: 17px; width: 8px; height: 8px; border-radius: 50%; background: var(--status-progress); }
+.notif-title { display: block; font-weight: 700; font-size: 14px; }
+.notif-msg { display: block; font-size: 13px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+.notif-time { display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+@media (max-width: 767px) {
+  .notif { position: static; }
+  .notif-panel { position: fixed; left: 12px; right: 12px; top: 60px; width: auto; max-width: none; }
+}
+
+/* Feature 2: reference-price tag (always says where the price came from) */
+.price-ref { font-size: 13px; color: var(--text-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.price-ref strong { color: var(--text); }
+.price-pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+.price-pill.live { background: var(--status-success-bg); color: var(--status-success); }
+.price-pill.reference { background: var(--status-neutral-bg); color: var(--status-neutral); }
+.price-pill.stale { background: var(--status-pending-bg); color: var(--status-pending); }
+
+/* Feature 4: price-band feedback in the sell form */
+.price-check { border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; margin: -4px 0 16px; border: 1px solid; }
+.price-check strong { display: block; margin-bottom: 2px; }
+.price-check.NORMAL { background: var(--status-success-bg); color: var(--status-success); }
+.price-check.REVIEW { background: var(--status-pending-bg); color: var(--status-pending); }
+.price-check.EXTREME { background: var(--status-danger-bg); color: var(--status-danger); }
+.price-check.muted { background: var(--status-neutral-bg); color: var(--status-neutral); }
+.textarea { min-height: 76px; resize: vertical; font-family: inherit; }
+
+.table-wrap { overflow-x: auto; }

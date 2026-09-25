@@ -9,15 +9,20 @@ class ListingCreate(BaseModel):
     kind: str = "device"                 # device | component | material
     type: str                            # category within the kind
     title: str = Field(min_length=2, max_length=160)
-    price: float = Field(gt=0)           # total price, or price-per-unit for materials
+    # total price, or price-per-unit for materials. Finite + capped so NaN/inf or
+    # absurd values can't slip past price regulation (Feature 4 anti-bypass).
+    price: float = Field(gt=0, le=1e9, allow_inf_nan=False)
     condition: str | None = None
     description: str | None = None
     device_id: int | None = None         # only for whole-device listings
 
     # Quantity-based fields (required for materials).
     unit: str | None = None
-    quantity: float | None = None
-    min_order: float | None = None
+    quantity: float | None = Field(default=None, allow_inf_nan=False)
+    min_order: float | None = Field(default=None, allow_inf_nan=False)
+
+    # Feature 4: required when the price lands in the REVIEW band.
+    price_justification: str | None = Field(default=None, max_length=600)
 
     @model_validator(mode="after")
     def _validate(self):
@@ -57,15 +62,19 @@ class ListingOut(BaseModel):
     seller: str | None = None
     device_id: int | None = None
     created_at: datetime
+    # Feature 4: returned on create so the seller sees why a listing was held.
+    price_assessment: dict | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
-    def from_orm_listing(cls, l) -> "ListingOut":
+    def from_orm_listing(cls, l, assessment: dict | None = None) -> "ListingOut":
         return cls(
             id=l.id, kind=l.kind, type=l.type, title=l.title, price=l.price,
             unit=l.unit, quantity=l.quantity, min_order=l.min_order,
             condition=l.condition, description=l.description, status=l.status,
             seller_id=l.seller_id, seller=l.seller.name if l.seller else None,
             device_id=l.device_id, created_at=l.created_at,
+            price_assessment=({k: assessment[k] for k in ("level", "reason", "ratio")}
+                              if assessment else None),
         )

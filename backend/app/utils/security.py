@@ -3,6 +3,7 @@
 - Password hashing with bcrypt (passwords never stored in plaintext).
 - JWT creation/verification for stateless authentication.
 """
+import secrets
 from datetime import datetime, timedelta
 
 from jose import jwt, JWTError
@@ -38,3 +39,17 @@ def decode_access_token(token: str) -> dict:
         return jwt.decode(token, settings.JWT_SECRET, algorithms=[ALGORITHM])
     except JWTError:
         raise APIError("Invalid or expired token", status_code=401)
+
+
+# ---- One-time codes (email verification, Feature 1) ----
+def generate_otp() -> str:
+    """A cryptographically secure 6-digit numeric code."""
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def hash_otp(code: str) -> str:
+    return pwd_context.hash(code)
+
+
+def verify_otp(code: str, hashed: str) -> bool:
+    return pwd_context.verify(code, hashed)

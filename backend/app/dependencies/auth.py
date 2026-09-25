@@ -37,3 +37,25 @@ def require_role(*allowed_roles: str):
             raise APIError("You do not have permission to perform this action", status_code=403)
         return current_user
     return checker
+
+
+def require_verified(current_user: User = Depends(get_current_user)) -> User:
+    """Gate sensitive actions (selling, transacting) behind email verification
+    (Feature 1). Server-authoritative — verification cannot be faked client-side."""
+    if not current_user.is_verified:
+        raise APIError("Please verify your email address to do this.", status_code=403)
+    return current_user
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Like get_current_user, but anonymous callers get None instead of 401.
+    Used by public reads that reveal a bit more to the owner/admin."""
+    if credentials is None:
+        return None
+    try:
+        return get_current_user(credentials, db)
+    except APIError:
+        return None

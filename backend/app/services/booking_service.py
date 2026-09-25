@@ -6,7 +6,7 @@ from ..models import Booking, Quotation, Device, Provider, User
 from ..schemas.booking import BookingCreate, BookingOut
 from ..models.enums import BOOKING_STATUS
 from ..utils.responses import APIError
-from . import lifecycle_service
+from . import lifecycle_service, notification_service
 
 PROVIDER_ROLES = ("provider", "refurbisher", "recycler", "supplier")
 
@@ -83,6 +83,11 @@ def update_status(db: Session, user: User, booking_id: int, new_status: str) -> 
     }.get(new_status)
     if EVENT:
         lifecycle_service.log_event(db, booking.device_id, EVENT[0], EVENT[1], user.name)
+    # Notify the device owner of the status change.
+    owner = db.query(Device).filter(Device.id == booking.device_id).first()
+    if owner:
+        notification_service.notify(db, owner.owner_id, "order", "Booking updated",
+                                    f"Your booking is now {new_status.replace('_', ' ').lower()}.", commit=False)
     db.commit()
     db.refresh(booking)
     return BookingOut.model_validate(booking)

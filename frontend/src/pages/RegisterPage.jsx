@@ -8,6 +8,10 @@ import Button from '../components/ui/Button';
 
 const ROLES = ['consumer', 'provider', 'refurbisher', 'recycler', 'supplier'];
 
+// UX hint only — the server enforces the same rule and is the real boundary.
+const ALLOWED_DOMAINS = ['gmail.com', 'yahoo.com'];
+const domainOk = (email) => ALLOWED_DOMAINS.includes(email.trim().toLowerCase().split('@')[1] || '');
+
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -19,11 +23,15 @@ export default function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!domainOk(form.email)) {
+      setError('Please use a @gmail.com or @yahoo.com email address.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       await register(form);
-      navigate('/dashboard');
+      navigate('/verify-email');
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -46,7 +54,11 @@ export default function RegisterPage() {
           </div>
           <div className="field">
             <label>Email</label>
-            <input className="input" type="email" value={form.email} onChange={update('email')} required />
+            <input className="input" type="email" value={form.email} onChange={update('email')}
+                   placeholder="you@gmail.com" required />
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+              Only @gmail.com and @yahoo.com addresses are accepted. We'll send a verification code.
+            </div>
           </div>
           <div className="field">
             <label>Password</label>

@@ -22,3 +22,9 @@ export async function reserveListing(id, quantity) {
   const res = await apiClient.put(`/listings/${id}/reserve`, quantity != null ? { quantity } : {});
   return res.data.data;
 }
+
+// The seller's own listings, including ones held for price review (Feature 4).
+export async function getMyListings() {
+  const res = await apiClient.get('/listings/mine');
+  return res.data.data;
+}

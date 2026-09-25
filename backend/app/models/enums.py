@@ -15,7 +15,12 @@ PROVIDER_TYPES = ("technician", "refurbisher", "recycler", "supplier")
 
 QUOTATION_STATUS = ("PENDING", "SENT", "ACCEPTED", "REJECTED", "EXPIRED")
 BOOKING_STATUS = ("REQUESTED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED")
-LISTING_STATUS = ("ACTIVE", "RESERVED", "SOLD", "REMOVED")
+# Feature 4 adds the price-regulation states:
+#   PRICE_REVIEW_REQUIRED    — suspicious price; visible but not purchasable until approved
+#   SUSPENDED_PENDING_REVIEW — extreme price; hidden from the marketplace until approved
+#   REJECTED                 — an admin rejected the price
+LISTING_STATUS = ("ACTIVE", "RESERVED", "SOLD", "REMOVED",
+                  "PRICE_REVIEW_REQUIRED", "SUSPENDED_PENDING_REVIEW", "REJECTED")
 COLLECTION_STATUS = ("REQUESTED", "SCHEDULED", "PICKED_UP", "RECEIVED", "RECYCLED")
 
 # --- Marketplace taxonomy (extended) ---
@@ -45,3 +50,14 @@ def categories_for_kind(kind: str) -> tuple:
         "material": MATERIAL_CATEGORIES,
     }.get(kind, ())
     return base + OTHER_CATEGORY
+
+
+# --- Pricing & price regulation (Features 2 + 4) ---
+PRICE_SOURCE_TYPES = ("admin", "api")          # admin-set reference vs. market-data feed
+PRICE_LEVELS = ("NORMAL", "REVIEW", "EXTREME")
+PRICE_REVIEW_STATUS = ("PENDING", "APPROVED", "REJECTED")
+CURRENCIES = ("INR",)
+
+# Grams per unit, so listing prices and reference prices can be compared across
+# units. "piece" has no mass and cannot be compared (see pricing_service).
+UNIT_GRAMS = {"g": 1, "kg": 1_000, "tonne": 1_000_000}

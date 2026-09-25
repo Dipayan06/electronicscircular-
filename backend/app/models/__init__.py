@@ -9,9 +9,12 @@ from .listing import ResaleListing
 from .collection import CollectionRequest
 from .lifecycle import LifecycleEvent
 from .notification import Notification
+from .verification import EmailVerification
+from .pricing import MaterialPrice, MaterialPriceHistory, PriceReview
 
 __all__ = [
     "Role", "User", "Device", "DeviceAssessment", "Provider", "ProviderService",
     "SparePart", "Quotation", "Booking", "ResaleListing", "CollectionRequest",
-    "LifecycleEvent", "Notification",
+    "LifecycleEvent", "Notification", "EmailVerification",
+    "MaterialPrice", "MaterialPriceHistory", "PriceReview",
 ]

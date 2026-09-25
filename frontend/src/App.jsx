@@ -25,6 +25,7 @@ import ListDevicePage from './pages/ListDevicePage';
 import CollectionPage from './pages/CollectionPage';
 import LifecyclePage from './pages/LifecyclePage';
 import AdminPage from './pages/AdminPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
 
               <Route path="/devices" element={<DevicesPage />} />
               <Route path="/devices/new" element={<DeviceFormPage />} />

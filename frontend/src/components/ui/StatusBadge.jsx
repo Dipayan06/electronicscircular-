@@ -12,6 +12,9 @@ const TONE = {
   RECYCLED: 'success', VERIFIED: 'success', SOLD: 'success',
   // danger
   REJECTED: 'danger', CANCELLED: 'danger', EXPIRED: 'danger',
+  // price regulation (Feature 4)
+  PRICE_REVIEW_REQUIRED: 'pending', SUSPENDED_PENDING_REVIEW: 'danger', APPROVED: 'success',
+  NORMAL: 'success', REVIEW: 'pending', EXTREME: 'danger',
   // neutral
   REMOVED: 'neutral', CLOSED: 'neutral',
   // device working status

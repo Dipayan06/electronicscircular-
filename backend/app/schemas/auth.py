@@ -6,6 +6,9 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 # Roles a user may self-register as (admin is created via seed only).
 SELF_SIGNUP_ROLES = ("consumer", "provider", "refurbisher", "recycler", "supplier")
 
+# Feature 1: allowed email domains (mirrored authoritatively in auth_service).
+ALLOWED_EMAIL_DOMAINS = ("gmail.com", "yahoo.com")
+
 
 class RegisterIn(BaseModel):
     name: str = Field(min_length=2, max_length=120)
@@ -20,10 +23,22 @@ class RegisterIn(BaseModel):
             raise ValueError(f"must be one of {', '.join(SELF_SIGNUP_ROLES)}")
         return v
 
+    @field_validator("email")
+    @classmethod
+    def allowed_domain(cls, v):
+        domain = str(v).rsplit("@", 1)[-1].lower()
+        if domain not in ALLOWED_EMAIL_DOMAINS:
+            raise ValueError("only @gmail.com or @yahoo.com addresses are supported")
+        return v
+
 
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
+
+
+class VerifyIn(BaseModel):
+    code: str = Field(min_length=4, max_length=8)
 
 
 class UserOut(BaseModel):
@@ -31,6 +46,7 @@ class UserOut(BaseModel):
     name: str
     email: EmailStr
     role: str
+    is_verified: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -38,7 +54,8 @@ class UserOut(BaseModel):
     @classmethod
     def from_user(cls, user) -> "UserOut":
         return cls(id=user.id, name=user.name, email=user.email,
-                   role=user.role.name, created_at=user.created_at)
+                   role=user.role.name, is_verified=user.is_verified,
+                   created_at=user.created_at)
 
 
 class AuthOut(BaseModel):

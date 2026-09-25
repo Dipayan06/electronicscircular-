@@ -2,8 +2,9 @@
 // the ONLY logout affordance on mobile (the sidebar is hidden there), so login and
 // logout work on both phone and desktop layouts.
 import { useState, useRef, useEffect } from 'react';
-import { Bell, LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from './NotificationBell';
 
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
@@ -25,7 +26,7 @@ export default function Navbar() {
     <header className="topbar">
       <strong style={{ color: 'var(--green-dark)' }}>Circular Electronics Marketplace</strong>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Bell size={18} color="var(--text-muted)" />
+        <NotificationBell />
         <div className="user-menu" ref={ref}>
           <button className="user-chip" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
             <div className="avatar">{initials(user?.name)}</div>

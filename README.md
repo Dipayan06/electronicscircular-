@@ -81,10 +81,28 @@ Open **http://localhost:5173** and log in with a demo account.
 5. **Recycle path:** assess a dead device → RECYCLE → request collection →
    advance to RECYCLED → the passport closes the loop.
 
+### Enhancement features (see [`ENHANCEMENT_REPORT.md`](ENHANCEMENT_REPORT.md))
+
+6. **Email verification:** register with a `@gmail.com`/`@yahoo.com` address →
+   enter the 6-digit code (dev mode: "Show my code" on the verify page).
+7. **Notifications:** the bell in the top bar shows unread count; buying,
+   quoting, bookings, collections and price reviews all create notifications.
+8. **Reference pricing:** Marketplace → *Materials* shows each material's
+   reference price with its source and a "not live" label; admins edit them in
+   *Admin → Material pricing*.
+9. **Price regulation:** sell copper at ₹1,500/kg (2× reference) → a
+   justification is required and the listing goes to review; admins approve or
+   reject in *Admin → Price reviews*.
+
+> After pulling these changes, re-run `python seed.py` — the schema changed
+> (new tables: `email_verifications`, `material_prices`,
+> `material_price_history`, `price_reviews`; new columns on `users` and
+> `notifications`). The seed script drops and recreates all tables.
+
 ## Testing
 
 ```bash
-cd backend && pytest -q      # 33 passed  (see backend/TEST_REPORT.md)
+cd backend && pytest -q      # 43 passed  (see backend/TEST_REPORT.md)
 ```
 
 ## Architecture (layered)

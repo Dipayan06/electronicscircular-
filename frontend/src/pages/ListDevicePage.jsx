@@ -1,29 +1,55 @@
 // Sell an Item (FR-H) — list a device, a component (RAM, GPU, CPU, motherboard,
 // storage, cooler, other) or a recovered material (copper, aluminium, rare-earth,
 // silicon, gold, other) sold by quantity. Route stays /list-device.
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import useAsync from '../hooks/useAsync';
 import { useToast } from '../context/ToastContext';
 import { getDevices } from '../services/deviceService';
 import { createListing } from '../services/listingService';
+import { getPrices, checkPrice } from '../services/pricingService';
 import { KINDS, CATEGORIES, UNITS, categoryLabel } from '../config/listings.config';
 import Button from '../components/ui/Button';
+import PriceReferenceTag from '../components/pricing/PriceReferenceTag';
+
+const LEVEL_TITLE = {
+  NORMAL: 'Price looks fair',
+  REVIEW: 'Price needs review',
+  EXTREME: 'Price is far above the reference',
+};
 
 export default function ListDevicePage() {
   const navigate = useNavigate();
   const toast = useToast();
   const { data: devices } = useAsync(getDevices);
+  const { data: prices } = useAsync(getPrices);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     kind: 'device', type: 'smartphone', device_id: '', title: '',
     price: '', condition: 'Good', description: '',
-    unit: 'kg', quantity: '', min_order: '',
+    unit: 'kg', quantity: '', min_order: '', price_justification: '',
   });
+  const [check, setCheck] = useState(null);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const isMaterial = form.kind === 'material';
+  const reference = isMaterial ? prices?.items.find((p) => p.material === form.type) : null;
+
+  // Feature 4: preview the price band as the seller types (debounced). This is
+  // advisory — the server repeats the check when the listing is submitted.
+  useEffect(() => {
+    const price = Number(form.price);
+    if (!isMaterial || !(price > 0)) { setCheck(null); return undefined; }
+    const t = setTimeout(() => {
+      checkPrice({ kind: form.kind, type: form.type, unit: form.unit, price })
+        .then(setCheck)
+        .catch(() => setCheck(null));
+    }, 350);
+    return () => clearTimeout(t);
+  }, [isMaterial, form.kind, form.type, form.unit, form.price]);
+
+  const needsJustification = check?.level === 'REVIEW';
 
   // Switching kind resets the category to that kind's first option.
   function setKind(e) {
@@ -50,11 +76,20 @@ export default function ListDevicePage() {
       payload.unit = form.unit;
       payload.quantity = Number(form.quantity);
       if (form.min_order) payload.min_order = Number(form.min_order);
+      if (form.price_justification.trim()) payload.price_justification = form.price_justification.trim();
     }
     try {
-      await createListing(payload);
-      toast.success('Item listed for sale');
-      navigate('/marketplace');
+      const listing = await createListing(payload);
+      if (listing.status === 'ACTIVE') {
+        toast.success('Item listed for sale');
+        navigate('/marketplace');
+      } else {
+        // Held for price review — show the seller their listing and its status.
+        toast.info(listing.status === 'SUSPENDED_PENDING_REVIEW'
+          ? 'Listing held: an admin must review the price before it is published.'
+          : 'Listed, but the price is under review — buyers can’t purchase it until approved.');
+        navigate(`/marketplace/${listing.id}`);
+      }
     } catch (err) {
       toast.error(err.message);
       setBusy(false);
@@ -117,6 +152,24 @@ export default function ListDevicePage() {
                 </select>
               </div>
             </div>
+            {reference && <div style={{ margin: '-6px 0 12px' }}><PriceReferenceTag price={reference} /></div>}
+            {check?.regulated && (
+              <div className={`price-check ${check.level}`} role="status">
+                <strong>{LEVEL_TITLE[check.level]}</strong>
+                {check.reason}
+              </div>
+            )}
+            {check && !check.regulated && (
+              <div className="price-check muted" role="status">{check.reason}</div>
+            )}
+            {(needsJustification || check?.level === 'EXTREME') && (
+              <div className="field">
+                <label>Why is this price different? {needsJustification ? '(required)' : '(optional, helps the admin)'}</label>
+                <textarea className="input textarea" value={form.price_justification} onChange={set('price_justification')}
+                          minLength={needsJustification ? 10 : undefined} maxLength={600} required={needsJustification}
+                          placeholder="e.g. Audio-grade oxygen-free copper, certified purity" />
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 14 }}>
               <div className="field" style={{ flex: 1 }}>
                 <label>Quantity available</label>

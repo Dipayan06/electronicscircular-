@@ -13,12 +13,14 @@ Demo accounts (development passwords — change for any real deployment):
     admin    : admin@example.com         / password123
 """
 from datetime import datetime, date, timedelta
+from decimal import Decimal
 
 from app.database import Base, engine, SessionLocal
 from app import models
 from app.models import (
     Role, User, Device, DeviceAssessment, Provider, ProviderService, SparePart,
-    Quotation, ResaleListing, LifecycleEvent,
+    Quotation, ResaleListing, LifecycleEvent, Notification,
+    MaterialPrice, MaterialPriceHistory, PriceReview,
 )
 from app.models.enums import ROLES
 from app.utils.security import hash_password
@@ -41,12 +43,13 @@ def seed():
         db.add_all(roles.values())
         db.flush()
 
-        # --- Users ---
-        consumer = User(name="Priya Sharma", email="demo.user@example.com",
+        # --- Users --- (seeded demo accounts are pre-verified so existing flows work;
+        # the @gmail.com/@yahoo.com domain rule applies to NEW self-registrations)
+        consumer = User(name="Priya Sharma", email="demo.user@example.com", is_verified=True,
                         password_hash=hash_password(DEV_PASSWORD), role_id=roles["consumer"].id)
-        provider_user = User(name="FixIt Labs", email="demo.provider@example.com",
+        provider_user = User(name="FixIt Labs", email="demo.provider@example.com", is_verified=True,
                              password_hash=hash_password(DEV_PASSWORD), role_id=roles["provider"].id)
-        admin = User(name="Site Admin", email="admin@example.com",
+        admin = User(name="Site Admin", email="admin@example.com", is_verified=True,
                      password_hash=hash_password(DEV_PASSWORD), role_id=roles["admin"].id)
         db.add_all([consumer, provider_user, admin])
         db.flush()
@@ -163,6 +166,69 @@ def seed():
             LifecycleEvent(device_id=d_tab.id, type="DEVICE_REGISTERED",
                            description="Device registered on the platform", actor="Priya",
                            timestamp=base - timedelta(days=5)),
+        ])
+
+        # --- Material reference prices (Feature 2) ---
+        # These are ADMIN-SET DEMO REFERENCES, not market data: they are labelled
+        # as such in `source`, are never reported as "live", and an admin can
+        # change them (or connect a real feed via PRICE_API_BASE_URL).
+        demo_source = "Admin reference — demo seed value, not market data"
+        refs = [
+            ("copper", "Copper", "750", "kg"),
+            ("aluminium", "Aluminium", "200", "kg"),
+            ("gold", "Gold", "6500", "g"),
+            ("rare_earth", "Rare-earth (neodymium)", "40", "g"),
+            ("silicon", "Silicon", "250", "kg"),
+        ]
+        for material, name, price, unit in refs:
+            db.add(MaterialPrice(material=material, display_name=name, reference_price=Decimal(price),
+                                 currency="INR", unit=unit, source=demo_source, source_type="admin",
+                                 observed_at=base, updated_at=base, updated_by=admin.id,
+                                 band_min=Decimal("0.5"), band_max=Decimal("1.5"), extreme_max=Decimal("3")))
+            db.add(MaterialPriceHistory(material=material, reference_price=Decimal(price), currency="INR",
+                                        unit=unit, source=demo_source, source_type="admin",
+                                        observed_at=base, recorded_by=admin.id))
+
+        # --- Flagged listings (Feature 4): one REVIEW, one EXTREME, awaiting an admin ---
+        l_review = ResaleListing(seller_id=consumer.id, kind="material", type="copper",
+                                 title="Oxygen-free copper wire (audio grade)", price=1500, unit="kg",
+                                 quantity=20, min_order=1, condition="Recovered",
+                                 description="OFC copper recovered from premium audio cabling.",
+                                 status="PRICE_REVIEW_REQUIRED")
+        l_extreme = ResaleListing(seller_id=consumer.id, kind="material", type="gold",
+                                  title="Gold flakes (connector recovery)", price=25000, unit="g",
+                                  quantity=5, min_order=1, condition="Recovered",
+                                  description="Small gold flakes.", status="SUSPENDED_PENDING_REVIEW")
+        db.add_all([l_review, l_extreme])
+        db.flush()
+        db.add_all([
+            PriceReview(listing_id=l_review.id, seller_id=consumer.id, material="copper", level="REVIEW",
+                        listed_price=Decimal("1500"), listed_unit="kg", reference_price=Decimal("750"),
+                        reference_unit="kg", ratio=Decimal("2"),
+                        reason="Price is 2× the reference (normal band 0.5×–1.5×). Add a justification; an admin will review it.",
+                        justification="Oxygen-free audio-grade copper sells at a premium over scrap copper.",
+                        created_at=base - timedelta(hours=5)),
+            PriceReview(listing_id=l_extreme.id, seller_id=consumer.id, material="gold", level="EXTREME",
+                        listed_price=Decimal("25000"), listed_unit="g", reference_price=Decimal("6500"),
+                        reference_unit="g", ratio=Decimal("3.846"),
+                        reason="Price is 3.846× the reference — above the 3× limit. The listing is held until an admin reviews it.",
+                        created_at=base - timedelta(hours=3)),
+            Notification(user_id=admin.id, type="price", title="Price review needed (EXTREME)",
+                         message="“Gold flakes (connector recovery)” was flagged at 3.846× the reference.",
+                         meta={"listing_id": l_extreme.id}, created_at=base - timedelta(hours=3)),
+        ])
+
+        # --- Notifications (Feature 3): a few so the bell has content in the demo ---
+        db.add_all([
+            Notification(user_id=consumer.id, type="quote", title="Quote received",
+                         message="FixIt Labs sent a quote of ₹3,200 for your Dell XPS 13.",
+                         meta={"device_id": d_xps.id}, created_at=base - timedelta(days=2)),
+            Notification(user_id=consumer.id, type="system", title="Welcome to the marketplace",
+                         message="Your account is verified. You can now list and buy items.",
+                         read=True, read_at=base - timedelta(days=19), created_at=base - timedelta(days=20)),
+            Notification(user_id=provider_user.id, type="quote", title="New quote request",
+                         message="Priya Sharma requested a quote for a Dell XPS 13.",
+                         meta={"device_id": d_xps.id}, created_at=base - timedelta(days=2)),
         ])
 
         db.commit()

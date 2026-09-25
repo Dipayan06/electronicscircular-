@@ -7,7 +7,7 @@ from ..models import CollectionRequest, Device, Provider, User
 from ..schemas.collection import CollectionCreate, CollectionOut
 from ..models.enums import COLLECTION_STATUS
 from ..utils.responses import APIError
-from . import lifecycle_service
+from . import lifecycle_service, notification_service
 
 PROVIDER_ROLES = ("provider", "refurbisher", "recycler", "supplier")
 
@@ -85,6 +85,10 @@ def advance_collection(db: Session, user: User, collection_id: int, new_status: 
     event = STATUS_EVENT.get(new_status)
     if event:
         lifecycle_service.log_event(db, req.device_id, event[0], event[1], user.name)
+    owner = db.query(Device).filter(Device.id == req.device_id).first()
+    if owner:
+        notification_service.notify(db, owner.owner_id, "order", "Collection updated",
+                                    f"Your collection is now {new_status.replace('_', ' ').lower()}.", commit=False)
     db.commit()
     db.refresh(req)
     return CollectionOut.model_validate(req)

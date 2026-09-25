@@ -12,3 +12,6 @@ env/
 *.db
 *.sqlite3
 uploads/
+
+# dev email outbox (contains verification codes) + other runtime data
+data/
