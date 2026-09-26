@@ -28,7 +28,7 @@ Register device → Assess condition → Circularity Recommendation
 | Frontend | React 18 + Vite, React Router, Axios |
 | Backend | FastAPI, SQLAlchemy 2, Pydantic, JWT (python-jose), passlib/bcrypt |
 | Database | PostgreSQL (with a zero-setup SQLite fallback for local dev) |
-| Tests | pytest + FastAPI TestClient (33 tests) |
+| Tests | pytest + FastAPI TestClient (49 tests) |
 
 ## Repository layout
 

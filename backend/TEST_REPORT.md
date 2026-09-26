@@ -2,7 +2,7 @@
 
 **Framework:** pytest + FastAPI `TestClient` (httpx)
 **Environment:** isolated in-memory SQLite (never touches the dev database)
-**Result:** **33 / 33 passed** ✅
+**Result:** **49 / 49 passed** ✅ (33 original + 16 for the Phase 20 enhancements)
 
 Run it:
 ```bash
@@ -64,12 +64,39 @@ Each test runs against a fresh database seeded with roles + one verified provide
 | **full_recycle_workflow** | assess → request collection → SCHEDULED→…→RECYCLED → lifecycle closes the loop; backward move rejected |
 | listing_create_and_reserve | list → reserve → 400 on re-reserve |
 
+> Since Phase 20, the helper accounts in these tests register with `@gmail.com`
+> addresses (only Gmail/Yahoo may sign up) and are verified through the
+> dev-mode code endpoint before listing or buying.
+
+## Phase 20 enhancement tests (16)
+
+| Test | Verifies | Feature |
+|------|----------|---------|
+| register_rejects_non_allowed_domains | 7 look-alike/other domains → 422; `@yahoo.com` accepted | Email verification |
+| new_user_unverified_cannot_list | `is_verified` false after sign-up; listing → 403 | Email verification |
+| wrong_code_rejected_then_verify | wrong code → 400; correct code verifies | Email verification |
+| notifications_event_driven_and_user_scoped | purchase notifies seller; other user → 404; mark read / mark all read | Notifications |
+| prices_labelled_reference_not_live | admin-set price reports `reference`, never `live`; source + timestamp present | Reference pricing |
+| only_admin_can_set_reference | consumer → 403; admin edit recorded in history; cache refreshed | Reference pricing |
+| invalid_reference_values_rejected | negative price / bad band → 422; refresh without a feed → 400 | Reference pricing |
+| price_levels_normal_review_extreme | NORMAL/REVIEW/EXTREME statuses; justification required; g↔kg conversion; per-piece → review; hidden listing 404 to strangers; can't buy while under review | Price regulation |
+| non_finite_price_rejected | `NaN` and `0` prices → 422 | Price regulation |
+| admin_review_workflow | admin-only queue; approve → ACTIVE, reject → REJECTED; reviewer + note stored; second decision → 409; seller notified | Price regulation |
+| estimate_from_purchase_price | ₹50,000, 2 years, Good → ₹23,900 | Resale estimate |
+| estimate_falls_back_to_category_reference | no price given → admin typical price, assumed age disclosed | Resale estimate |
+| estimate_uses_own_device_assessment_only | cracked screen factor applied; another user's device → 404 | Resale estimate |
+| estimate_blends_platform_comparables | 3 comparables blended (60/40); seller's own listings excluded | Resale estimate |
+| estimate_unavailable_without_data | "other" with no data → not available; material → 422; no login → 401 | Resale estimate |
+| admin_updates_category_reference | consumer → 403; admin edit changes the estimate | Resale estimate |
+
 ## Traceability (test IDs → requirements, per RTM §0.12)
 
 Every functional-requirement group has at least one passing test: FR-A (auth),
 FR-B (devices), FR-C/FR-D (assessment/recommendation), FR-E (providers/RBAC),
 FR-F (quotations), FR-G (bookings), FR-H (marketplace), FR-I (collection),
-FR-J (lifecycle).
+FR-J (lifecycle). The Phase 20 features (email verification, notifications,
+reference pricing, price regulation, resale estimate) each have their own tests
+in the table above.
 
 ## Frontend testing
 
@@ -82,6 +109,10 @@ development:
 - Role-aware navigation renders per role
 - API errors surface as friendly inline messages / toasts (no raw errors)
 - The assessment → recommendation → lifecycle flow renders real backend data
+- Phase 20: sign-up domain check and code verification; notification bell
+  (unread count, panel, mark read); reference-price labels; price-band feedback
+  and admin review; resale estimate on the sell form. All checked on desktop and a
+  375px mobile screen
 
 ## Defects found & fixed during testing
 

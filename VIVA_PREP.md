@@ -37,6 +37,10 @@ We followed a **phased software-engineering process**, not big-bang coding:
    the real API in one cut-over, hardened error handling, added automated tests,
    prepared deployment.
 7. **Delivery** (Phases 18–19) — a rehearsed demo and this viva prep.
+8. **Enhancements** (Phase 20) — verified sign-up, working notifications,
+   material reference pricing, seller price regulation, and resale-value
+   estimates, added on top of the working system without changing any existing
+   workflow (details in `ENHANCEMENT_REPORT.md`).
 
 **Why mock first, then swap?** The frontend was built against a service-layer
 seam, so pages never knew if data came from a mock or the API. That let us build
@@ -136,11 +140,57 @@ inconsistent half-states. It's the payoff of separating concerns.
 > minor wear, we recommend RESALE — the engine always prefers the highest-value
 > option on the circularity ladder.
 
+### Phase 20 enhancements
+**Q: How do you stop fake or throwaway accounts?**
+> Only Gmail and Yahoo addresses can register, and the server enforces it (the
+> form check is just a hint). A 6-digit code is emailed; we store only its bcrypt
+> hash, it expires in 10 minutes, it can be used once, and five wrong tries burn
+> it. Resends are rate-limited. The "verified" flag can only be set by a correct
+> code, and selling or buying needs a verified account.
+
+**Q: Why doesn't the verification email arrive in the demo?**
+> Development mode: there's no mail server, so the code goes to a local outbox and
+> the account owner can reveal their own code. Setting the SMTP variables sends
+> real email. Production must turn dev mode off.
+
+**Q: How do notifications work?**
+> One service writes a notification inside the same database transaction as the
+> event (a purchase, a quote, a booking change, a price decision), so they're
+> always consistent. The bell checks the unread count every 30 seconds. Every
+> query is scoped to the logged-in user, so nobody can read or mark someone
+> else's.
+
+**Q: Where do the material prices come from? Are they live?**
+> Not unless a live market feed is connected. Without one, prices are set by an
+> admin and labelled "Reference · not live" with their source and date. A price
+> is only called "Live" if it came from the feed and is fresh; old ones are
+> marked "Stale". If the feed fails we keep the last known value and its
+> original date, so it ages visibly instead of pretending to be current. Money is
+> stored as exact decimals, not floats.
+
+**Q: How do you stop sellers overcharging?**
+> When a material is listed, the server compares its price per gram with the
+> reference. Between 0.5× and 1.5× it goes live. Outside that, up to 3×, the
+> seller must justify it and an admin reviews it; buyers can see it but can't
+> buy it. Above 3× it's hidden until reviewed. Suspiciously cheap prices are
+> reviewed too (fraud signal). Switching to "per piece" to dodge the check sends
+> it to review, and NaN or negative prices are rejected. Each review keeps a
+> snapshot of the numbers, the reason, and who decided, when and why.
+
+**Q: How does the resale estimate work? Is it AI?**
+> No, it's a transparent formula, like the recommendation engine. It starts from
+> what the seller paid (or an admin-set typical new price), removes a yearly
+> percentage for age, applies the assessment's faults (a cracked screen keeps
+> 60%, water damage 50%), and blends in similar listings when there are at least
+> three. It shows every step and a confidence level, and if there's no data it
+> says so instead of guessing.
+
 ### Testing
 **Q: How did you test it?**
-> 33 automated tests: unit tests for the engine, API tests for each endpoint
-> (auth, validation, ownership, RBAC), and integration tests that run the whole
-> repair and recycle journeys. Each uses an isolated in-memory database.
+> 49 automated tests: unit tests for the engine, API tests for each endpoint
+> (auth, validation, ownership, RBAC), integration tests that run the whole
+> repair and recycle journeys, and 16 tests for the Phase 20 features. Each uses
+> an isolated in-memory database.
 
 **Q: Did testing find bugs?**
 > Yes — a schema field-shadowing bug, and a validation guard correctly rejecting
@@ -173,6 +223,7 @@ inconsistent half-states. It's the payoff of separating concerns.
 | 25 | Deployment documentation | `deployment.md` |
 | 26 | User manual | `README.md` + `DEMO_SCRIPT.md` |
 | 27 | Developer documentation | `README.md`, `frontend/README.md`, `backend/README.md` |
+| — | Enhancement report (Phase 20) | `ENHANCEMENT_REPORT.md` + Phase 20 in the Full Report |
 
 ---
 
@@ -180,7 +231,9 @@ inconsistent half-states. It's the payoff of separating concerns.
 
 - **5 circular actions:** Repair (1) · Reuse (2) · Resale (3) · Refurbish (4) · Recycle (5)
 - **6 roles:** consumer, provider, refurbisher, recycler, supplier, admin
-- **13 database tables**, **33 passing tests**
+- **18 database tables**, **49 passing tests** (13 tables and 33 tests before Phase 20)
+- **Price bands:** 0.5×–1.5× NORMAL · up to 3× REVIEW · above 3× EXTREME (admin-configurable)
+- **Verification code:** 6 digits · bcrypt-hashed · 10 min · single-use · 5 attempts
 - **Stack:** React + Vite · FastAPI + SQLAlchemy + Pydantic · PostgreSQL/SQLite · JWT
 - **Two signature features:** the rule-based recommendation engine, and the Digital Device Passport (append-only lifecycle timeline)
 - **Scope:** smartphones, laptops, tablets. **Out of scope (future):** AI grading, IoT, real payments.
@@ -192,7 +245,10 @@ inconsistent half-states. It's the payoff of separating concerns.
 - **AI-based grading** from photos — currently a transparent rule engine (by design for the MVP).
 - **Real payments** — resale/reservation is simulated; no payment gateway.
 - **IoT device tracking** — future enhancement.
-- **Real notifications** — in-app only; no email/SMS delivery.
+- **Notifications** — working in-app notifications, but checked every 30 s rather than pushed; no SMS/push delivery.
+- **Live market prices** — no market feed connected yet; material and device-category prices are admin references (labelled "not market data").
+- **Existing listings aren't re-checked** when a reference price changes (regulation applies when a listing is created).
+- **No migration tool** — the seed recreates tables; add Alembic before production data.
 - **Frontend automated tests** — manual checklist for the MVP; would add React Testing Library.
 - **One role per account** — a simplification; a real system might allow multiple roles per user.
 
@@ -206,4 +262,4 @@ stronger than treating them as gaps.
 - Point to the **architecture diagram** and walk the request path.
 - Open **Swagger** and run an endpoint live.
 - Open the **Digital Passport** — it visually tells the whole story.
-- Run **`pytest -q`** — 33 passing tests answer a lot of doubts at once.
+- Run **`pytest -q`** — 49 passing tests answer a lot of doubts at once.

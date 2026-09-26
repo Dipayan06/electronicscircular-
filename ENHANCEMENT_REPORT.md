@@ -1,7 +1,8 @@
-# Enhancement Report: Four Marketplace Features
+# Enhancement Report: Marketplace Features (Phase 20)
 
 **Project:** Circular Electronics Marketplace · **Date:** 26 September 2026
-**Scope:** Four features added to the existing working app (Phases 0–19). Nothing
+**Scope:** Four features added to the existing working app (Phases 0–19), plus a
+resale-value estimate (see the addendum at the end). Nothing
 was rebuilt: every existing screen, API, workflow and style is kept.
 
 ---

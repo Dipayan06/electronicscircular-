@@ -1,7 +1,7 @@
 # Circular Electronics Marketplace — Backend
 
 FastAPI + SQLAlchemy backend. **Phase 5** delivers the database layer:
-configuration, connection, SQLAlchemy models for all 13 tables, and a seed
+configuration, connection, SQLAlchemy models for all 18 tables, and a seed
 script. The FastAPI application, routers and schemas arrive in Phase 6+.
 
 ## Tech stack
@@ -52,7 +52,7 @@ backend/
 ├── app/
 │   ├── config.py            settings from .env (pydantic-settings)
 │   ├── database.py          engine, SessionLocal, Base, get_db
-│   ├── models/              SQLAlchemy models (13 tables) + enums
+│   ├── models/              SQLAlchemy models (18 tables) + enums
 │   └── utils/security.py    password hashing (bcrypt)
 ├── seed.py                  create tables + demo data
 ├── requirements.txt

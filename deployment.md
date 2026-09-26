@@ -39,6 +39,22 @@ postgresql+psycopg2://USER:PASSWORD@HOST:5432/DBNAME
 | `JWT_SECRET` | a long random string | **must** be strong & secret in prod |
 | `JWT_EXPIRE_MINUTES` | `120` | token lifetime |
 | `FRONTEND_ORIGIN` | `https://your-app.vercel.app` | CORS allow-list (exact origin) |
+| `EMAIL_DEV_MODE` | `false` | **must be `false` in prod.** Dev mode writes codes to a local outbox instead of emailing them |
+| `EMAIL_FROM` | `no-reply@yourdomain.com` | sender address for verification emails |
+| `SMTP_HOST` / `SMTP_PORT` | `smtp.sendgrid.net` / `587` | STARTTLS mail server |
+| `SMTP_USER` / `SMTP_PASSWORD` | provider credentials | **secret.** Set in the host's dashboard, never commit |
+| `OTP_TTL_MINUTES` · `OTP_MAX_ATTEMPTS` | `10` · `5` | code lifetime and wrong tries allowed |
+| `RESEND_COOLDOWN_SECONDS` · `RESEND_MAX_PER_HOUR` | `60` · `5` | resend rate limits |
+| `PRICE_API_BASE_URL` / `PRICE_API_KEY` | (optional) | market-data feed for material prices; leave empty to use admin references |
+| `PRICE_STALE_AFTER_HOURS` | `24` | prices older than this are labelled "Stale" |
+
+> **Schema note:** this release adds tables (`email_verifications`,
+> `material_prices`, `material_price_history`, `price_reviews`,
+> `category_prices`). A fresh database gets them automatically on startup, but
+> an existing database needs them added. The demo seed recreates everything;
+> for real data, add Alembic migrations first. After seeding, replace the demo
+> material and device-category prices in the Admin panel (they are labelled
+> "not market data").
 
 ## 3. Frontend — Vercel / Netlify
 

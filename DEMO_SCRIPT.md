@@ -83,6 +83,41 @@ of each. That's the circular economy in software."
 
 ---
 
+## Scenario C — Marketplace Enhancements, Phase 20 (≈3 min)
+
+1. **Verified sign-up.** Log out → **Create an account** with `someone@outlook.com`
+   → rejected. Change it to a new `@gmail.com` address → lands on **Verify your email**.
+   Enter a wrong code (refused), then **Show my code** → enter it → verified.
+   - "Only Gmail and Yahoo can register, and the server checks it, not just the
+     form. The code is stored only as a hash, expires in 10 minutes, and can only
+     be used once. Until you verify, you can browse but not buy or sell."
+2. **Notifications.** Point at the bell: it now shows **1**. Open it and show the
+   "Email verified" notification.
+   - "Real events create these: purchases, quotes, bookings, collections and
+     price reviews. Each user only ever sees their own."
+3. **Reference prices.** Marketplace → **Materials** tab.
+   - "Each material shows a reference price with its source and age, labelled
+     *not live*. We never pretend a price is live unless it really comes from a
+     live market feed."
+4. **Price regulation.** **Sell an Item** → Material → Copper → ₹1,500 per kg.
+   The form says *Price needs review* (2× the reference) and asks for a reason.
+   Add one and submit: the listing is held.
+   - "An inflated price can't just go live. Up to 3× needs a justification and an
+     admin review; above 3× the listing is hidden until approved."
+5. **Resale estimate.** Still on Sell an Item → **Device** → choose the registered
+   **Dell XPS 13** → enter *Price paid* ₹95,000. The estimate appears
+   (≈ ₹25,200); open **How is this calculated?** and click **Use this price**.
+   - "It starts from what they paid, takes off value for age and for the faults
+     found in the assessment, and blends in similar listings. It always says it's
+     an estimate, not a quote."
+6. **Admin.** Log in as **admin** → the bell shows the new price review →
+   **Admin Panel → Price reviews** → **Approve** with a note. Show the
+   **Material pricing** and **Device pricing** tabs.
+   - "Every decision is recorded with who made it, when and why, and the seller
+     is notified."
+
+---
+
 ## Optional add-ons (if asked / time permits)
 
 ### Admin & role-based access (30s)
@@ -98,7 +133,7 @@ of each. That's the circular economy in software."
 - Optionally run `GET /api/providers` live.
 
 ### Tests (20s)
-- In the backend terminal: `pytest -q` → "33 passed".
+- In the backend terminal: `pytest -q` → "49 passed".
 - "The business logic and every workflow are covered by automated tests."
 
 ---
@@ -112,6 +147,8 @@ of each. That's the circular economy in software."
 | Provider "Submit quote" seems missing | You must be logged in *as the provider* for that action |
 | Frontend can't reach backend | Check the backend terminal is running on :8000 |
 | Screen freezes | The seeded SENT quote lets you demo accept→book as consumer alone |
+| No verification email arrives | Expected in dev mode. Use **Show my code** on the Verify page |
+| Price reviews tab is empty | The seed includes two pending reviews; re-run `python seed.py` |
 
 ---
 
@@ -128,3 +165,8 @@ of each. That's the circular economy in software."
 | Recycle flow | the circular loop closing |
 | Admin verify / 403 | role-based access control |
 | Swagger / pytest | real REST backend + automated testing |
+| Verified sign-up | server-side domain rule, hashed single-use codes |
+| Notification bell | event-driven, per-user data |
+| Reference prices | honest data labelling (source, age, "not live") |
+| Price review | server-side validation, admin workflow, audit trail |
+| Resale estimate | transparent, explainable calculation |
