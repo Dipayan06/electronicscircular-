@@ -20,7 +20,7 @@ from app import models
 from app.models import (
     Role, User, Device, DeviceAssessment, Provider, ProviderService, SparePart,
     Quotation, ResaleListing, LifecycleEvent, Notification,
-    MaterialPrice, MaterialPriceHistory, PriceReview,
+    MaterialPrice, MaterialPriceHistory, PriceReview, CategoryPrice,
 )
 from app.models.enums import ROLES
 from app.utils.security import hash_password
@@ -188,6 +188,28 @@ def seed():
             db.add(MaterialPriceHistory(material=material, reference_price=Decimal(price), currency="INR",
                                         unit=unit, source=demo_source, source_type="admin",
                                         observed_at=base, recorded_by=admin.id))
+
+        # --- Category references for the resale estimate ---
+        # ADMIN-SET DEMO VALUES, not market data (labelled as such; admins edit
+        # them in Admin → Device pricing). Only used when the seller doesn't say
+        # what they paid.
+        categories = [
+            # category, kind, name, typical new ₹, depreciation/yr
+            ("smartphone", "device", "Smartphone", "45000", "0.25"),
+            ("laptop", "device", "Laptop", "70000", "0.20"),
+            ("tablet", "device", "Tablet", "30000", "0.22"),
+            ("cpu", "component", "CPU", "20000", "0.15"),
+            ("gpu", "component", "Graphics card", "35000", "0.18"),
+            ("ram", "component", "RAM", "5000", "0.20"),
+            ("motherboard", "component", "Motherboard", "12000", "0.18"),
+            ("storage", "component", "Storage drive", "7000", "0.25"),
+            ("cooler", "component", "Cooler", "4000", "0.12"),
+        ]
+        for category, kind, name, price, dep in categories:
+            db.add(CategoryPrice(category=category, kind=kind, display_name=name,
+                                 typical_new_price=Decimal(price), annual_depreciation=Decimal(dep),
+                                 residual_floor=Decimal("0.1"), source=demo_source,
+                                 observed_at=base, updated_at=base, updated_by=admin.id))
 
         # --- Flagged listings (Feature 4): one REVIEW, one EXTREME, awaiting an admin ---
         l_review = ResaleListing(seller_id=consumer.id, kind="material", type="copper",

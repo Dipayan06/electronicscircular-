@@ -339,3 +339,16 @@ h1, h2, h3 { color: var(--text); margin: 0 0 0.4em; }
 .textarea { min-height: 76px; resize: vertical; font-family: inherit; }
 
 .table-wrap { overflow-x: auto; }
+
+/* Resale estimate (sell form) */
+.estimate-card { border: 1px solid var(--border); background: var(--green-soft); border-radius: var(--radius-sm); padding: 12px 14px; margin: -4px 0 16px; font-size: 14px; }
+.estimate-head { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--green-dark); flex-wrap: wrap; }
+.estimate-range { font-size: 22px; font-weight: 800; color: var(--green-dark); margin: 4px 0; }
+.estimate-actions { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.estimate-muted { color: var(--text-muted); }
+.estimate-factors { margin: 8px 0 0; padding-left: 18px; color: var(--text-muted); font-size: 13px; }
+.estimate-factors li { margin: 2px 0; }
+.estimate-conf { margin-left: auto; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+.estimate-conf.high { background: var(--status-success-bg); color: var(--status-success); }
+.estimate-conf.medium { background: var(--status-progress-bg); color: var(--status-progress); }
+.estimate-conf.low { background: var(--status-pending-bg); color: var(--status-pending); }

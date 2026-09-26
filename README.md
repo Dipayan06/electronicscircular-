@@ -93,6 +93,9 @@ Open **http://localhost:5173** and log in with a demo account.
 9. **Price regulation:** sell copper at ₹1,500/kg (2× reference) → a
    justification is required and the listing goes to review; admins approve or
    reject in *Admin → Price reviews*.
+10. **Resale estimate:** Sell an Item → Device/Component shows an estimated
+    resale range (uses your registered device's assessment, what you paid, and
+    similar listings). Admins tune category references in *Admin → Device pricing*.
 
 > After pulling these changes, re-run `python seed.py` — the schema changed
 > (new tables: `email_verifications`, `material_prices`,
@@ -102,7 +105,7 @@ Open **http://localhost:5173** and log in with a demo account.
 ## Testing
 
 ```bash
-cd backend && pytest -q      # 43 passed  (see backend/TEST_REPORT.md)
+cd backend && pytest -q      # 49 passed  (see backend/TEST_REPORT.md)
 ```
 
 ## Architecture (layered)

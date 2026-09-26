@@ -11,10 +11,11 @@ from .lifecycle import LifecycleEvent
 from .notification import Notification
 from .verification import EmailVerification
 from .pricing import MaterialPrice, MaterialPriceHistory, PriceReview
+from .valuation import CategoryPrice
 
 __all__ = [
     "Role", "User", "Device", "DeviceAssessment", "Provider", "ProviderService",
     "SparePart", "Quotation", "Booking", "ResaleListing", "CollectionRequest",
     "LifecycleEvent", "Notification", "EmailVerification",
-    "MaterialPrice", "MaterialPriceHistory", "PriceReview",
+    "MaterialPrice", "MaterialPriceHistory", "PriceReview", "CategoryPrice",
 ]

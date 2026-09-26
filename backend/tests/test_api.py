@@ -390,3 +390,88 @@ def test_admin_review_workflow(client):
            if r["listing_id"] == ex2["id"]][0]["id"]
     client.put(f"/api/price-reviews/{rid}/reject", headers=ha, json={"note": "No evidence"})
     assert client.get(f"/api/listings/{ex2['id']}", headers=hs).json()["data"]["status"] == "REJECTED"
+
+
+# ---------------- Resale estimate (devices + components) ----------------
+
+from datetime import datetime as _dt
+
+THIS_YEAR = _dt.utcnow().year
+
+
+def _estimate(client, headers, **body):
+    return client.post("/api/valuation/estimate", headers=headers, json=body)
+
+
+def test_estimate_from_purchase_price(client):
+    h = auth_header(_consumer(client, "est1@gmail.com"))
+    d = _estimate(client, h, kind="device", type="smartphone", purchase_price=50000,
+                  purchase_year=THIS_YEAR - 2, condition="Good").json()["data"]
+    # 50000 x 0.75^2 x 0.85 = 23906 -> rounded to 23900
+    assert d["available"] and d["point"] == 23900
+    assert d["low"] < d["point"] < d["high"]
+    assert d["confidence"] == "medium" and d["reference"] is None
+    assert any("price you paid" in f for f in d["factors"])
+
+
+def test_estimate_falls_back_to_category_reference(client):
+    h = auth_header(_consumer(client, "est2@gmail.com"))
+    d = _estimate(client, h, kind="device", type="smartphone", condition="Good").json()["data"]
+    # 45000 x 0.75^2 (assumed 2 yrs) x 0.85 = 21516 -> 21500
+    assert d["available"] and d["point"] == 21500 and d["confidence"] == "low"
+    assert d["reference"]["typical_new_price"] == 45000
+    assert any("assumed" in f for f in d["factors"])
+
+
+def test_estimate_uses_own_device_assessment_only(client):
+    h = auth_header(_consumer(client, "est3@gmail.com"))
+    dev = client.post("/api/devices", headers=h, json={
+        "type": "smartphone", "brand": "Apple", "model": "iPhone 12", "purchase_year": THIS_YEAR - 1,
+        "working_status": "working"}).json()["data"]
+    client.post(f"/api/devices/{dev['id']}/assessment", headers=h, json={
+        "screen": "cracked", "battery": "good", "body": "good",
+        "powers_on": True, "charging": True, "water_damage": False})
+    d = _estimate(client, h, kind="device", type="smartphone", device_id=dev["id"],
+                  purchase_price=60000).json()["data"]
+    # 60000 x 0.75 (1 yr) x 0.6 (cracked screen) = 27000
+    assert d["point"] == 27000 and any("cracked screen" in f for f in d["factors"])
+    other = auth_header(_consumer(client, "est3b@gmail.com"))
+    assert _estimate(client, other, kind="device", type="smartphone", device_id=dev["id"]).status_code == 404
+
+
+def test_estimate_blends_platform_comparables(client):
+    seller = verify(client, auth_header(_consumer(client, "comps@gmail.com")))
+    for price in (20000, 22000, 24000):
+        client.post("/api/listings", headers=seller, json={
+            "kind": "component", "type": "gpu", "title": "RTX card", "price": price})
+    h = auth_header(_consumer(client, "est4@gmail.com"))
+    d = _estimate(client, h, kind="component", type="gpu", purchase_price=30000,
+                  purchase_year=THIS_YEAR, condition="Good").json()["data"]
+    # formula 30000 x 1 x 0.85 = 25500; blended 0.6*25500 + 0.4*22000 = 24100
+    assert d["point"] == 24100 and d["comparables"]["count"] == 3 and d["confidence"] == "high"
+    # a seller's own listings don't count as comparables for them
+    own = _estimate(client, seller, kind="component", type="gpu", purchase_price=30000,
+                    purchase_year=THIS_YEAR, condition="Good").json()["data"]
+    assert own["comparables"]["count"] == 0
+
+
+def test_estimate_unavailable_without_data(client):
+    h = auth_header(_consumer(client, "est5@gmail.com"))
+    d = _estimate(client, h, kind="component", type="other").json()["data"]
+    assert d["available"] is False and "what you paid" in d["reason"]
+    assert _estimate(client, h, kind="material", type="copper").status_code == 422
+    assert client.post("/api/valuation/estimate", json={"kind": "device", "type": "laptop"}).status_code == 401
+
+
+def test_admin_updates_category_reference(client):
+    h = auth_header(_consumer(client, "est6@gmail.com"))
+    assert client.put("/api/valuation/categories/smartphone", headers=h,
+                      json={"typical_new_price": 1}).status_code == 403
+    ha = auth_header(token_for(client, ADMIN_EMAIL))
+    r = client.put("/api/valuation/categories/smartphone", headers=ha,
+                   json={"typical_new_price": 60000, "source_note": "Flipkart avg Sep"}).json()["data"]
+    assert r["typical_new_price"] == 60000 and "Flipkart" in r["source"]
+    cats = client.get("/api/valuation/categories").json()["data"]
+    assert [c for c in cats if c["category"] == "smartphone"][0]["typical_new_price"] == 60000
+    d = _estimate(client, h, kind="device", type="smartphone", condition="Good").json()["data"]
+    assert d["point"] == 28700   # 60000 x 0.5625 x 0.85 = 28687 -> 28700

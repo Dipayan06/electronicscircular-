@@ -17,7 +17,7 @@ from app import models  # noqa: F401 — register all tables
 from datetime import datetime
 from decimal import Decimal
 
-from app.models import Role, User, Provider, MaterialPrice
+from app.models import Role, User, Provider, MaterialPrice, CategoryPrice
 from app.models.enums import ROLES
 from app.utils.security import hash_password
 
@@ -53,6 +53,12 @@ def client():
     for material, price, unit in (("copper", "750", "kg"), ("gold", "6500", "g")):
         db.add(MaterialPrice(material=material, display_name=material.title(), reference_price=Decimal(price),
                              unit=unit, source="Admin reference - test", source_type="admin",
+                             observed_at=datetime.utcnow()))
+    # Category references for resale estimates.
+    for category, kind, price, dep in (("smartphone", "device", "45000", "0.25"), ("gpu", "component", "35000", "0.18")):
+        db.add(CategoryPrice(category=category, kind=kind, display_name=category.title(),
+                             typical_new_price=Decimal(price), annual_depreciation=Decimal(dep),
+                             residual_floor=Decimal("0.1"), source="Admin reference - test",
                              observed_at=datetime.utcnow()))
     db.commit()
     db.close()

@@ -326,3 +326,60 @@ changes.
 - **No migration tool.** Adopt Alembic before running against production data.
 - **Dev-mode OTP delivery** writes codes to a local outbox file by design. Turn
   it off (`EMAIL_DEV_MODE=false` plus SMTP) for any real deployment.
+
+---
+
+## Addendum: Resale-value estimate (devices and components)
+
+When a seller lists a device or component, the sell form now shows an
+**estimated resale range** with a suggested price and a "Use this price"
+button. The estimate is deterministic and explains itself. It is never
+presented as a market quote.
+
+**How the number is built** (`backend/app/services/valuation_service.py`):
+
+1. **Anchor.** The price the seller paid, if they enter it. Otherwise the
+   admin-set *typical new price* for the category (`category_prices` table,
+   `Numeric` money, labelled as an admin reference). If neither is available
+   and there are too few comparables, the app says so instead of guessing.
+2. **Age.** The anchor loses a fixed share of its value each year, set per
+   category (for example smartphones 25%/year, CPUs 15%/year), down to a
+   minimum value. The age comes from the registered device or the "year
+   bought" field. If it's unknown, 2 years is assumed and the seller is told.
+3. **Condition.** For a registered device with an assessment, the answers
+   drive the multiplier. For example, a cracked screen keeps 60% of the value,
+   a weak battery 90%, water damage 50%, and a device that won't power on
+   30%. Otherwise the listing condition is used (Excellent 1.0, Good 0.85,
+   Fair 0.7, Refurbished 0.9, For parts 0.25).
+4. **Platform comparables.** With at least 3 similar listings (same kind and
+   category, last 180 days, ACTIVE/RESERVED/SOLD, excluding the seller's own
+   listings), the result is 60% formula and 40% comparable median.
+   Same-brand listings are preferred when there are enough.
+5. **Range and confidence.** The range is ±12%, ±18% or ±28%, depending on
+   whether a purchase price, a known age and comparables are all present.
+
+The purchase price is used only for the estimate and is not stored.
+Estimating from a `device_id` works only on the caller's own device (404
+otherwise).
+
+**API.**
+- `POST /api/valuation/estimate` (logged-in user)
+- `GET /api/valuation/categories` (public)
+- `PUT /api/valuation/categories/{category}` (admin)
+
+**Admin.** The new **Admin → Device pricing** tab edits each category's
+typical new price (with a source note), yearly value loss and minimum value.
+The seed values are demo references labelled *not market data*.
+
+**Tests.** 6 new tests (49 passing in total):
+- the purchase-price formula
+- the category fallback with assumed age
+- assessment factors and device ownership
+- comparable blending and self-exclusion
+- the not-available case and input errors
+- admin-only category edits flowing through to the estimate
+
+Checked in the browser: a Dell XPS (paid ₹95,000, bought 2021, minor screen
+wear and weak battery) is estimated at ₹25,200, matching the hand calculation.
+The GPU fallback gives ₹20,000. The mobile layout fits with no horizontal
+scroll.

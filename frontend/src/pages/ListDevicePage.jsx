@@ -12,6 +12,10 @@ import { getPrices, checkPrice } from '../services/pricingService';
 import { KINDS, CATEGORIES, UNITS, categoryLabel } from '../config/listings.config';
 import Button from '../components/ui/Button';
 import PriceReferenceTag from '../components/pricing/PriceReferenceTag';
+import EstimateCard from '../components/pricing/EstimateCard';
+import { getEstimate } from '../services/valuationService';
+
+const THIS_YEAR = new Date().getFullYear();
 
 const LEVEL_TITLE = {
   NORMAL: 'Price looks fair',
@@ -29,8 +33,11 @@ export default function ListDevicePage() {
     kind: 'device', type: 'smartphone', device_id: '', title: '',
     price: '', condition: 'Good', description: '',
     unit: 'kg', quantity: '', min_order: '', price_justification: '',
+    purchase_price: '', purchase_year: '',
   });
   const [check, setCheck] = useState(null);
+  const [estimate, setEstimate] = useState(null);
+  const [estimating, setEstimating] = useState(false);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const isMaterial = form.kind === 'material';
@@ -51,17 +58,39 @@ export default function ListDevicePage() {
 
   const needsJustification = check?.level === 'REVIEW';
 
+  // Resale estimate for devices/components, refreshed as the details change.
+  // The purchase price/year are only used for the estimate, not stored.
+  useEffect(() => {
+    if (isMaterial) { setEstimate(null); return undefined; }
+    const payload = { kind: form.kind, type: form.type, condition: form.condition };
+    if (form.device_id) payload.device_id = Number(form.device_id);
+    if (Number(form.purchase_price) > 0) payload.purchase_price = Number(form.purchase_price);
+    const year = Number(form.purchase_year);
+    if (year >= 1990 && year <= THIS_YEAR) payload.purchase_year = year;
+    setEstimating(true);
+    const t = setTimeout(() => {
+      getEstimate(payload)
+        .then(setEstimate)
+        .catch(() => setEstimate(null))
+        .finally(() => setEstimating(false));
+    }, 400);
+    return () => clearTimeout(t);
+  }, [isMaterial, form.kind, form.type, form.condition, form.device_id, form.purchase_price, form.purchase_year]);
+
   // Switching kind resets the category to that kind's first option.
   function setKind(e) {
     const kind = e.target.value;
-    setForm((f) => ({ ...f, kind, type: CATEGORIES[kind][0], device_id: '' }));
+    setForm((f) => ({ ...f, kind, type: CATEGORIES[kind][0], device_id: '', purchase_price: '', purchase_year: '' }));
   }
 
   // Picking a registered device prefills title (device kind only).
   function pickDevice(e) {
     const id = e.target.value;
     const d = devices?.find((x) => x.id === Number(id));
-    setForm((f) => ({ ...f, device_id: id, title: d ? `${d.brand} ${d.model}` : f.title, type: d ? d.type : f.type }));
+    setForm((f) => ({
+      ...f, device_id: id, title: d ? `${d.brand} ${d.model}` : f.title, type: d ? d.type : f.type,
+      purchase_year: d?.purchase_year ? String(d.purchase_year) : f.purchase_year,
+    }));
   }
 
   async function handleSubmit(e) {
@@ -134,10 +163,26 @@ export default function ListDevicePage() {
         </div>
 
         {!isMaterial ? (
-          <div className="field">
-            <label>Price (₹)</label>
-            <input className="input" type="number" min="1" value={form.price} onChange={set('price')} required />
-          </div>
+          <>
+            <div style={{ display: 'flex', gap: 14 }}>
+              <div className="field" style={{ flex: 1 }}>
+                <label>Price paid ₹ (optional)</label>
+                <input className="input" type="number" min="1" value={form.purchase_price} onChange={set('purchase_price')}
+                       placeholder="e.g. 45000" title="What you paid when new, improves the estimate" />
+              </div>
+              <div className="field" style={{ flex: 1 }}>
+                <label>Year bought (optional)</label>
+                <input className="input" type="number" min="1990" max={THIS_YEAR} value={form.purchase_year}
+                       onChange={set('purchase_year')} placeholder={String(THIS_YEAR - 2)} />
+              </div>
+            </div>
+            <EstimateCard estimate={estimate} loading={estimating}
+                          onUse={(p) => setForm((f) => ({ ...f, price: String(p) }))} />
+            <div className="field">
+              <label>Price (₹)</label>
+              <input className="input" type="number" min="1" value={form.price} onChange={set('price')} required />
+            </div>
+          </>
         ) : (
           <>
             <div style={{ display: 'flex', gap: 14 }}>

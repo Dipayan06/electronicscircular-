@@ -12,11 +12,12 @@ import Button from '../components/ui/Button';
 import LoadingState from '../components/ui/LoadingState';
 import PricingAdmin from '../components/admin/PricingAdmin';
 import PriceReviewsAdmin from '../components/admin/PriceReviewsAdmin';
+import CategoryPricingAdmin from '../components/admin/CategoryPricingAdmin';
 import { getReviews } from '../services/priceReviewService';
 
 const TABS = [
   ['providers', 'Providers'], ['devices', 'Devices'], ['listings', 'Listings'],
-  ['reviews', 'Price reviews'], ['pricing', 'Material pricing'],
+  ['reviews', 'Price reviews'], ['pricing', 'Material pricing'], ['device-pricing', 'Device pricing'],
 ];
 
 export default function AdminPage() {
@@ -110,6 +111,7 @@ export default function AdminPage() {
 
         {tab === 'reviews' && <PriceReviewsAdmin onChange={() => { reloadReviews(); reloadListings(); }} />}
         {tab === 'pricing' && <PricingAdmin />}
+        {tab === 'device-pricing' && <CategoryPricingAdmin />}
       </div>
     </div>
   );

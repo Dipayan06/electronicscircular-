@@ -13,7 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .config import settings
 from .database import Base, engine
 from . import models  # noqa: F401 — ensures all tables are registered on Base
-from .routers import auth, devices, providers, listings, quotations, bookings, collections, dashboard, notifications, pricing, price_reviews
+from .routers import auth, devices, providers, listings, quotations, bookings, collections, dashboard, notifications, pricing, price_reviews, valuation
 from .utils.responses import APIError, failure, success
 
 app = FastAPI(
@@ -73,6 +73,7 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(pricing.router, prefix="/api")
 app.include_router(price_reviews.router, prefix="/api")
+app.include_router(valuation.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["System"], summary="Health check")
