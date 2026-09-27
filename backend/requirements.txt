@@ -17,6 +17,5 @@ python-multipart==0.0.12
 pytest==8.3.3
 httpx==0.27.2  # for FastAPI TestClient (API tests, Phase 16)
 
-# Optional PostgreSQL driver (SQLite works with no extra driver).
-# Uncomment for a PostgreSQL DATABASE_URL:
-# psycopg2-binary==2.9.9
+# PostgreSQL driver (needed for the deployed database; SQLite needs no driver).
+psycopg2-binary==2.9.9
