@@ -1,0 +1,5 @@
+# Only needed to TRAIN the assistant model (backend/slm/train.py).
+# The API itself only needs numpy. CPU wheels are enough:
+#   pip install -r slm/requirements-train.txt --index-url https://download.pytorch.org/whl/cpu
+torch>=2.3
+numpy>=1.26

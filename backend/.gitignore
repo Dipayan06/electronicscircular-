@@ -15,3 +15,6 @@ uploads/
 
 # dev email outbox (contains verification codes) + other runtime data
 data/
+
+# assistant model training artefacts (weights in app/ml/weights ARE committed)
+slm/checkpoints/

@@ -19,3 +19,6 @@ httpx==0.27.2  # for FastAPI TestClient (API tests, Phase 16)
 
 # PostgreSQL driver (needed for the deployed database; SQLite needs no driver).
 psycopg2-binary==2.9.9
+
+# Circular assistant (in-house small language model) — inference runs on NumPy.
+numpy==2.1.3

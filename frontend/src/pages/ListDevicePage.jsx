@@ -14,6 +14,7 @@ import Button from '../components/ui/Button';
 import PriceReferenceTag from '../components/pricing/PriceReferenceTag';
 import EstimateCard from '../components/pricing/EstimateCard';
 import { getEstimate } from '../services/valuationService';
+import { draftListing } from '../services/assistantService';
 
 const THIS_YEAR = new Date().getFullYear();
 
@@ -38,6 +39,8 @@ export default function ListDevicePage() {
   const [check, setCheck] = useState(null);
   const [estimate, setEstimate] = useState(null);
   const [estimating, setEstimating] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [draftNote, setDraftNote] = useState('');
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const isMaterial = form.kind === 'material';
@@ -91,6 +94,23 @@ export default function ListDevicePage() {
       ...f, device_id: id, title: d ? `${d.brand} ${d.model}` : f.title, type: d ? d.type : f.type,
       purchase_year: d?.purchase_year ? String(d.purchase_year) : f.purchase_year,
     }));
+  }
+
+  // The assistant drafts a title + description from the device's assessment.
+  // The seller can edit both before listing.
+  async function writeForMe() {
+    setDrafting(true);
+    try {
+      const d = await draftListing(form.device_id);
+      setForm((f) => ({ ...f, title: d.title, description: d.description }));
+      setDraftNote(d.source === 'model'
+        ? 'Written by the assistant from your condition assessment. Edit anything before listing.'
+        : 'Basic draft from your device details. Edit anything before listing.');
+    } catch (err) {
+      setDraftNote(err.message);
+    } finally {
+      setDrafting(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -238,8 +258,17 @@ export default function ListDevicePage() {
         </div>
 
         <div className="field">
-          <label>Description</label>
-          <input className="input" value={form.description} onChange={set('description')} placeholder="Short description" />
+          <label htmlFor="description">Description</label>
+          <textarea id="description" className="input textarea" value={form.description} onChange={set('description')}
+                    placeholder="Short description" />
+          {form.kind === 'device' && form.device_id && (
+            <div className="assist-row">
+              <Button type="button" variant="secondary" onClick={writeForMe} disabled={drafting}>
+                {drafting ? 'Writing…' : 'Write title & description for me'}
+              </Button>
+              {draftNote && <span className="assist-note" role="status">{draftNote}</span>}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>

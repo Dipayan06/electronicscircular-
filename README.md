@@ -28,7 +28,8 @@ Register device → Assess condition → Circularity Recommendation
 | Frontend | React 18 + Vite, React Router, Axios |
 | Backend | FastAPI, SQLAlchemy 2, Pydantic, JWT (python-jose), passlib/bcrypt |
 | Database | PostgreSQL (with a zero-setup SQLite fallback for local dev) |
-| Tests | pytest + FastAPI TestClient (49 tests) |
+| Assistant | In-house small language model (1.4M-parameter GPT, trained from scratch; NumPy inference) |
+| Tests | pytest + FastAPI TestClient (64 tests) |
 
 ## Repository layout
 
@@ -96,6 +97,14 @@ Open **http://localhost:5173** and log in with a demo account.
 10. **Resale estimate:** Sell an Item → Device/Component shows an estimated
     resale range (uses your registered device's assessment, what you paid, and
     similar listings). Admins tune category references in *Admin → Device pricing*.
+11. **Circular assistant** (in-house small language model, see
+    [`backend/slm/README.md`](backend/slm/README.md)):
+    - the chat bubble answers help questions
+    - on *Assess*, "Fill in the answers for me" turns a free-text description into the form
+    - on the recommendation card, "Explain in detail" explains the rule engine's decision
+    - on *Sell an Item*, "Write title & description for me" drafts the listing for a registered device
+
+    The model only helps with wording. Decisions stay with the rule engine.
 
 > After pulling these changes, re-run `python seed.py` — the schema changed
 > (new tables: `email_verifications`, `material_prices`,
@@ -105,7 +114,7 @@ Open **http://localhost:5173** and log in with a demo account.
 ## Testing
 
 ```bash
-cd backend && pytest -q      # 49 passed  (see backend/TEST_REPORT.md)
+cd backend && pytest -q      # 64 passed  (see backend/TEST_REPORT.md)
 ```
 
 ## Architecture (layered)

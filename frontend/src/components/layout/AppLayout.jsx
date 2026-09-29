@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import BottomNav from './BottomNav';
+import AssistantChat from '../assistant/AssistantChat';
 
 export default function AppLayout() {
   const { user } = useAuth();
@@ -27,6 +28,7 @@ export default function AppLayout() {
         </div>
       </div>
       <BottomNav />
+      <AssistantChat />
     </div>
   );
 }
