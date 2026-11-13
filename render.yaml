@@ -19,6 +19,8 @@ services:
         generateValue: true          # Render creates a strong random secret
       - key: FRONTEND_ORIGIN
         sync: false                  # set to the Vercel URL after the frontend is deployed
+      - key: SEED_DEMO_DATA
+        value: "true"                # load demo data on startup when the database is empty
       - key: EMAIL_DEV_MODE
         value: "true"                # demo site: codes via "Show my code"; set SMTP_* and false for real email
 

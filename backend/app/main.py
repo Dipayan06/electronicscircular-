@@ -37,6 +37,25 @@ app.add_middleware(
 Base.metadata.create_all(bind=engine)
 
 
+def _seed_if_empty() -> None:
+    """Load demo data into an empty database when SEED_DEMO_DATA is on.
+    seed() resets the schema, so it must never run against a database with data."""
+    from .database import SessionLocal
+    from .models import Role
+    db = SessionLocal()
+    try:
+        empty = db.query(Role).first() is None
+    finally:
+        db.close()
+    if empty:
+        from seed import seed  # backend/seed.py; uvicorn runs from backend/
+        seed()
+
+
+if settings.SEED_DEMO_DATA:
+    _seed_if_empty()
+
+
 # --- Global exception handlers: always return the { success, message } envelope ---
 @app.exception_handler(APIError)
 async def handle_api_error(request: Request, exc: APIError):

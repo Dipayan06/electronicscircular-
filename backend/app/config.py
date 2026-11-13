@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     PRICE_API_KEY: str = ""            # never commit — set via .env only
     PRICE_STALE_AFTER_HOURS: int = 24  # older than this → flagged "stale" in the UI
 
+    # --- Demo hosting ---
+    # When true, load the demo data (seed.py) on startup, but ONLY if the database
+    # is empty (no roles yet). Lets a fresh cloud database (e.g. a new free Render
+    # Postgres) come up ready to use without running seed.py by hand.
+    SEED_DEMO_DATA: bool = False
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
