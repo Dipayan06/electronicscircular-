@@ -45,3 +45,6 @@ class ResaleListing(Base):
 
     seller = relationship("User", back_populates="listings")
     device = relationship("Device")
+    # Product photos, oldest first. selectin loads only ids/types (bytes are deferred).
+    images = relationship("ListingImage", order_by="ListingImage.id", lazy="selectin",
+                          cascade="all, delete-orphan")

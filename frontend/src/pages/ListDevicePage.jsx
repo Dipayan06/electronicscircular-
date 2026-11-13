@@ -7,7 +7,8 @@ import { ChevronLeft } from 'lucide-react';
 import useAsync from '../hooks/useAsync';
 import { useToast } from '../context/ToastContext';
 import { getDevices } from '../services/deviceService';
-import { createListing } from '../services/listingService';
+import { createListing, uploadListingImages } from '../services/listingService';
+import PhotoPicker from '../components/marketplace/PhotoPicker';
 import { getPrices, checkPrice } from '../services/pricingService';
 import { KINDS, CATEGORIES, UNITS, categoryLabel } from '../config/listings.config';
 import Button from '../components/ui/Button';
@@ -41,6 +42,7 @@ export default function ListDevicePage() {
   const [estimating, setEstimating] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [draftNote, setDraftNote] = useState('');
+  const [photos, setPhotos] = useState([]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const isMaterial = form.kind === 'material';
@@ -129,6 +131,16 @@ export default function ListDevicePage() {
     }
     try {
       const listing = await createListing(payload);
+      if (photos.length) {
+        // The listing exists even if the upload fails; the seller can retry from its page.
+        try {
+          await uploadListingImages(listing.id, photos);
+        } catch (err) {
+          toast.error(`Listed, but the photos failed to upload (${err.message}). Add them from the listing page.`);
+          navigate(`/marketplace/${listing.id}`);
+          return;
+        }
+      }
       if (listing.status === 'ACTIVE') {
         toast.success('Item listed for sale');
         navigate('/marketplace');
@@ -269,6 +281,11 @@ export default function ListDevicePage() {
               {draftNote && <span className="assist-note" role="status">{draftNote}</span>}
             </div>
           )}
+        </div>
+
+        <div className="field">
+          <label>Photos</label>
+          <PhotoPicker files={photos} onChange={setPhotos} disabled={busy} />
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>

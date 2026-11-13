@@ -1,13 +1,13 @@
 """Marketplace listing endpoints (FR-H). Reads are public; create/reserve require
 authentication. Listings can be devices, components, or materials sold by quantity."""
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..dependencies.auth import get_current_user, get_optional_user, require_verified
 from ..models import User
 from ..schemas.listing import ListingCreate, ReserveIn
-from ..services import listing_service
+from ..services import listing_service, listing_image_service
 from ..utils.responses import success
 
 router = APIRouter(prefix="/listings", tags=["Marketplace"])
@@ -38,3 +38,25 @@ def reserve_listing(listing_id: int, data: ReserveIn | None = None,
                     db: Session = Depends(get_db), user: User = Depends(require_verified)):
     qty = data.quantity if data else None
     return success(listing_service.reserve_listing(db, user, listing_id, qty), "Purchase confirmed")
+
+
+# --- Product photos ---
+
+@router.post("/{listing_id}/images", summary="Upload product photos (seller only; JPEG/PNG/WebP, max 2 MB each, 5 per listing)")
+def upload_images(listing_id: int, files: list[UploadFile] = File(...),
+                  db: Session = Depends(get_db), user: User = Depends(require_verified)):
+    return success(listing_image_service.add_images(db, user, listing_id, files), "Photos uploaded")
+
+
+@router.delete("/{listing_id}/images/{image_id}", summary="Remove a product photo (seller only)")
+def delete_image(listing_id: int, image_id: int,
+                 db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return success(listing_image_service.delete_image(db, user, listing_id, image_id), "Photo removed")
+
+
+@router.get("/images/{image_id}", summary="Get a product photo (public, used as an <img> src)")
+def get_image(image_id: int, db: Session = Depends(get_db)):
+    image = listing_image_service.get_image(db, image_id)
+    # Photos are never edited in place (only added/removed), so they cache forever.
+    return Response(content=image.data, media_type=image.content_type,
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})

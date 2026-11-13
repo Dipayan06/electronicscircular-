@@ -81,8 +81,8 @@ export default function PriceReviewsAdmin({ onChange }) {
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     {r.status === 'PENDING' && (
                       <>
-                        <Button variant="secondary" onClick={() => setDeciding({ review: r, approve: true })}>Approve</Button>{' '}
-                        <Button variant="ghost" onClick={() => setDeciding({ review: r, approve: false })}>Reject</Button>
+                        <Button variant="success" onClick={() => setDeciding({ review: r, approve: true })}>Approve</Button>{' '}
+                        <Button variant="danger" onClick={() => setDeciding({ review: r, approve: false })}>Reject</Button>
                       </>
                     )}
                   </td>
@@ -96,7 +96,7 @@ export default function PriceReviewsAdmin({ onChange }) {
       <Modal open={!!deciding} title={deciding?.approve ? 'Approve price' : 'Reject price'} onClose={() => setDeciding(null)}
         footer={<>
           <Button variant="secondary" onClick={() => setDeciding(null)}>Cancel</Button>
-          <Button onClick={decide} disabled={busy}>{busy ? 'Saving…' : deciding?.approve ? 'Approve' : 'Reject'}</Button>
+          <Button variant={deciding?.approve ? 'success' : 'danger'} onClick={decide} disabled={busy}>{busy ? 'Saving…' : deciding?.approve ? 'Approve' : 'Reject'}</Button>
         </>}>
         <p style={{ marginTop: 0 }}>
           {deciding?.approve

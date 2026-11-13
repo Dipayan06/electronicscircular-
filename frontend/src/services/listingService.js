@@ -28,3 +28,27 @@ export async function getMyListings() {
   const res = await apiClient.get('/listings/mine');
   return res.data.data;
 }
+
+// --- Product photos ---
+export const MAX_PHOTOS = 5;
+export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+// Listing image urls are relative to the API base (works with /api or a full URL).
+export function imageUrl(image) {
+  return `${apiClient.defaults.baseURL}${image.url}`;
+}
+
+// files: File[]. Returns the updated listing (with its images).
+export async function uploadListingImages(id, files) {
+  const form = new FormData();
+  files.forEach((f) => form.append('files', f));
+  // Clear the JSON default so the browser sets multipart/form-data with its boundary.
+  const res = await apiClient.post(`/listings/${id}/images`, form, { headers: { 'Content-Type': undefined } });
+  return res.data.data;
+}
+
+export async function deleteListingImage(id, imageId) {
+  const res = await apiClient.delete(`/listings/${id}/images/${imageId}`);
+  return res.data.data;
+}

@@ -11,6 +11,7 @@ import { getMyReviews } from '../services/priceReviewService';
 import { useAuth } from '../context/AuthContext';
 import { categoryLabel, kindLabel } from '../config/listings.config';
 import PriceReferenceTag from '../components/pricing/PriceReferenceTag';
+import ListingGallery from '../components/marketplace/ListingGallery';
 
 // Feature 4: what buyers/sellers see for listings held by price regulation.
 const REVIEW_NOTE = {
@@ -27,7 +28,7 @@ import ErrorMessage from '../components/ui/ErrorMessage';
 export default function ListingDetailPage() {
   const { id } = useParams();
   const toast = useToast();
-  const { data, loading, error, reload } = useAsync(() => getListing(id), [id]);
+  const { data, loading, error, reload, setData } = useAsync(() => getListing(id), [id]);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [qty, setQty] = useState('');
@@ -87,6 +88,8 @@ export default function ListingDetailPage() {
           )}
         </div>
       )}
+
+      <ListingGallery listing={data} isOwner={isOwner} onChange={setData} />
 
       <div className="card">
         <dl className="kv">

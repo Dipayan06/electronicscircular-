@@ -6,6 +6,7 @@ from .provider import Provider, ProviderService, SparePart
 from .quotation import Quotation
 from .booking import Booking
 from .listing import ResaleListing
+from .listing_image import ListingImage
 from .collection import CollectionRequest
 from .lifecycle import LifecycleEvent
 from .notification import Notification
@@ -15,7 +16,7 @@ from .valuation import CategoryPrice
 
 __all__ = [
     "Role", "User", "Device", "DeviceAssessment", "Provider", "ProviderService",
-    "SparePart", "Quotation", "Booking", "ResaleListing", "CollectionRequest",
+    "SparePart", "Quotation", "Booking", "ResaleListing", "ListingImage", "CollectionRequest",
     "LifecycleEvent", "Notification", "EmailVerification",
     "MaterialPrice", "MaterialPriceHistory", "PriceReview", "CategoryPrice",
 ]

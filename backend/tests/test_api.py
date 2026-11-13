@@ -221,6 +221,46 @@ def test_listing_create_and_reserve(client):
     assert client.put(f"/api/listings/{listing['id']}/reserve", headers=hc).status_code == 400
 
 
+PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64
+
+
+def test_listing_images_upload_serve_delete(client):
+    hs = verify(client, auth_header(_consumer(client, "imgseller@gmail.com")))
+    other = verify(client, auth_header(_consumer(client, "imgother@gmail.com")))
+    lid = client.post("/api/listings", headers=hs, json={
+        "title": "Pixel 6", "type": "smartphone", "price": 15000}).json()["data"]["id"]
+    url = f"/api/listings/{lid}/images"
+
+    r = client.post(url, headers=hs, files=[("files", ("a.png", PNG, "image/png")),
+                                            ("files", ("b.jpg", JPEG, "image/jpeg"))])
+    assert r.status_code == 200, r.text
+    images = r.json()["data"]["images"]
+    assert len(images) == 2
+
+    # served publicly with the sniffed type; listings expose the photo urls
+    got = client.get("/api" + images[0]["url"])
+    assert got.status_code == 200 and got.headers["content-type"] == "image/png" and got.content == PNG
+    assert len(client.get(f"/api/listings/{lid}").json()["data"]["images"]) == 2
+
+    # only the seller can change photos
+    assert client.post(url, headers=other, files=[("files", ("c.png", PNG, "image/png"))]).status_code == 403
+    # content is checked by magic bytes, not the declared type
+    assert client.post(url, headers=hs, files=[("files", ("x.png", b"not an image", "image/png"))]).status_code == 400
+    # size cap
+    big = PNG + b"\x00" * (2 * 1024 * 1024)
+    assert client.post(url, headers=hs, files=[("files", ("big.png", big, "image/png"))]).status_code == 400
+    # count cap (2 existing + 4 > 5)
+    four = [("files", (f"{i}.png", PNG, "image/png")) for i in range(4)]
+    assert client.post(url, headers=hs, files=four).status_code == 400
+
+    # delete
+    assert client.delete(f"{url}/{images[0]['id']}", headers=other).status_code == 403
+    left = client.delete(f"{url}/{images[0]['id']}", headers=hs).json()["data"]["images"]
+    assert [i["id"] for i in left] == [images[1]["id"]]
+    assert client.get("/api" + images[0]["url"]).status_code == 404
+
+
 # ---------------- Feature 1: email verification ----------------
 
 def test_register_rejects_non_allowed_domains(client):

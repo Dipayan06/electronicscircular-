@@ -64,6 +64,8 @@ class ListingOut(BaseModel):
     created_at: datetime
     # Feature 4: returned on create so the seller sees why a listing was held.
     price_assessment: dict | None = None
+    # Product photos: [{id, url}], url relative to the API base (/api).
+    images: list[dict] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -77,4 +79,7 @@ class ListingOut(BaseModel):
             device_id=l.device_id, created_at=l.created_at,
             price_assessment=({k: assessment[k] for k in ("level", "reason", "ratio")}
                               if assessment else None),
+            # ?v= makes the url unique per upload, so a reused id never hits a stale browser cache.
+            images=[{"id": i.id, "url": f"/listings/images/{i.id}?v={i.created_at:%Y%m%d%H%M%S%f}"}
+                    for i in l.images],
         )

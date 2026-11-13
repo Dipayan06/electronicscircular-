@@ -19,5 +19,7 @@ export default function useAsync(fn, deps = []) {
 
   useEffect(run, [run]);
 
-  return { ...state, reload: run };
+  const setData = useCallback((data) => setState({ data, loading: false, error: null }), []);
+
+  return { ...state, reload: run, setData };
 }

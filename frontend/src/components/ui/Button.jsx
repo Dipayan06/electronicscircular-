@@ -1,5 +1,5 @@
 // Reusable button (Phase 0 §14 component kit).
-// variant: 'primary' | 'secondary' | 'ghost'
+// variant: 'primary' | 'secondary' | 'ghost' | 'success' (approve) | 'danger' (reject)
 export default function Button({
   variant = 'primary',
   block = false,

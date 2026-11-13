@@ -106,8 +106,8 @@ export default function QuotationsPage() {
           )}
           {!isProvider && q.status === 'SENT' && (
             <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="secondary" onClick={() => reject(q)}>Reject</Button>
-              <Button onClick={() => accept(q)}>Accept → Book</Button>
+              <Button variant="danger" onClick={() => reject(q)}>Reject</Button>
+              <Button variant="success" onClick={() => accept(q)}>Accept → Book</Button>
             </div>
           )}
           {q.status === 'ACCEPTED' && <span style={{ fontSize: 13, color: 'var(--status-success)' }}>Accepted{!isProvider ? ' — see Bookings.' : '.'}</span>}

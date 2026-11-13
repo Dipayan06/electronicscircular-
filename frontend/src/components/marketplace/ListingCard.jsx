@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Smartphone, Laptop, Tablet, Cpu, MemoryStick, HardDrive, Fan, CircuitBoard, Boxes, Package } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
 import { categoryLabel } from '../../config/listings.config';
+import { imageUrl } from '../../services/listingService';
 
 const ICON = {
   smartphone: Smartphone, laptop: Laptop, tablet: Tablet,
@@ -20,6 +21,9 @@ export default function ListingCard({ listing }) {
   const isMaterial = listing.kind === 'material';
   return (
     <div className="card">
+      {listing.images?.length > 0 && (
+        <img className="listing-thumb" src={imageUrl(listing.images[0])} alt={listing.title} loading="lazy" />
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
         <Icon size={20} color="var(--green)" />
         <strong style={{ flex: 1 }}>{listing.title}</strong>
